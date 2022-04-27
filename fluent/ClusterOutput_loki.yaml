@@ -1,0 +1,13 @@
+apiVersion: fluentbit.fluent.io/v1alpha2
+kind: ClusterOutput
+metadata:
+  name: loki-output
+  labels:
+    fluentbit.fluent.io/enabled: "true"
+    fluentbit.fluent.io/component: logging
+spec:
+  match: kube.*
+  loki:
+    autoKubernetesLabels: true
+    host: LOKI_SERVICE_TOREPLACE.NAMESPACE_LOKI_TOREPLACE.svc
+    port:

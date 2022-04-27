@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "10254"
+    metrics.dynatrace.com/scrape: "true"
+    metrics.dynatrace.com/port: "10254"
+    metrics.dynatrace.com/path: "/metrics"
+  name: ingress-nginx-metrics
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9113
+      name: prometheus
+      targetPort: prometheus
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: ingress-nginx
