@@ -60,8 +60,8 @@ gcloud container clusters create onlineboutique \
 
 ### 3.Clone the Github Repository
 ```
-git clone https://github.com/isItObservable/OpenTelemetry-Instrumentation
-cd OpenTelemetry-Instrumentation
+git clone https://github.com/observe-k8s/Observe-k8s-demo
+cd Observe-k8s-demo
 ```
 #### 4.Deploy Nginx Ingress Controller
 ```
@@ -284,7 +284,7 @@ sed -i "s,NAMESPACE_LOKI_TOREPLACE,$NAMESPACE_LOKI," fluent/ClusterOutput_loki.y
 
 #### Deploy the output plugin
 ```
-kubectl apply -f fluent/fluentbit_deployment.yaml  -n kubesphere-logging-system
+kubectl apply -f fluent/ClusterOutput_loki.yaml  -n kubesphere-logging-system
 
 ```
 
