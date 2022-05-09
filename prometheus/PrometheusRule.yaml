@@ -1,0 +1,51 @@
+  apiVersion: monitoring.coreos.com/v1
+  kind: PrometheusRule
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: prometheus
+      meta.helm.sh/release-namespace: default
+    labels:
+      app: kube-prometheus-stack
+      app.kubernetes.io/instance: prometheus
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/part-of: kubecost
+    name: prometheus-kubecost-rules
+    namespace: default
+  spec:
+    groups:
+    - name: CPU
+      rules:
+      - expr: sum(rate(container_cpu_usage_seconds_total{container_name!=""}[5m]))
+        record: cluster:cpu_usage:rate5m
+      - expr: rate(container_cpu_usage_seconds_total{container_name!=""}[5m])
+        record: cluster:cpu_usage_nosum:rate5m
+      - expr: avg(irate(container_cpu_usage_seconds_total{container_name!="POD", container_name!=""}[5m]))
+          by (container_name,pod_name,namespace)
+        record: kubecost_container_cpu_usage_irate
+      - expr: sum(container_memory_working_set_bytes{container_name!="POD",container_name!=""})
+          by (container_name,pod_name,namespace)
+        record: kubecost_container_memory_working_set_bytes
+      - expr: sum(container_memory_working_set_bytes{container_name!="POD",container_name!=""})
+        record: kubecost_cluster_memory_working_set_bytes
+    - name: Savings
+      rules:
+      - expr: sum(avg(kube_pod_owner{owner_kind!="DaemonSet"}) by (pod) * sum(container_cpu_allocation)
+          by (pod))
+        labels:
+          daemonset: "false"
+        record: kubecost_savings_cpu_allocation
+      - expr: sum(avg(kube_pod_owner{owner_kind="DaemonSet"}) by (pod) * sum(container_cpu_allocation)
+          by (pod)) / sum(kube_node_info)
+        labels:
+          daemonset: "true"
+        record: kubecost_savings_cpu_allocation
+      - expr: sum(avg(kube_pod_owner{owner_kind!="DaemonSet"}) by (pod) * sum(container_memory_allocation_bytes)
+          by (pod))
+        labels:
+          daemonset: "false"
+        record: kubecost_savings_memory_allocation_bytes
+      - expr: sum(avg(kube_pod_owner{owner_kind="DaemonSet"}) by (pod) * sum(container_memory_allocation_bytes)
+          by (pod)) / sum(kube_node_info)
+        labels:
+          daemonset: "true"
+        record: kubecost_savings_memory_allocation_bytes

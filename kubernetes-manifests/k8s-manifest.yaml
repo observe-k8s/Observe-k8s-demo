@@ -20,13 +20,13 @@ spec:
       terminationGracePeriodSeconds: 5
       containers:
       - name: server
-        image: hrexed/emailservice-otel:0.1
+        image: hrexed/emailservice-otel:0.2
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
         env:
         - name: OTLP_HOST
-          value: "otel-collector.default.svc.cluster.local"
+          value: "oteld-collector.default.svc.cluster.local"
         - name: OTLP_PORT
           value: "4317"
         - name: PORT
@@ -85,7 +85,7 @@ spec:
     spec:
       containers:
         - name: server
-          image: hrexed/checkoutservice-otel-metric:0.1
+          image: hrexed/checkoutservice-otel-metric:0.2
           imagePullPolicy: Always
           ports:
           - containerPort: 5050
@@ -97,7 +97,7 @@ spec:
               command: ["/bin/grpc_health_probe", "-addr=:5050"]
           env:
           - name: OTLP_SERVICE_ADDR
-            value: "otel-collector.default.svc.cluster.local"
+            value: "oteld-collector.default.svc.cluster.local"
           - name: OTLP_SERVICE_PORT
             value: "4317"
           - name: PORT
@@ -168,7 +168,7 @@ spec:
         - name: demo-registry
       containers:
       - name: server
-        image: hrexed/recommendationservice-otel:0.1
+        image: hrexed/recommendationservice-otel:0.2
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
@@ -182,7 +182,7 @@ spec:
             command: ["/bin/grpc_health_probe", "-addr=:8080"]
         env:
         - name: OTLP_HOST
-          value: "otel-collector.default.svc.cluster.local"
+          value: "oteld-collector.default.svc.cluster.local"
         - name: OTLP_PORT
           value: "4317"
         - name: PORT
@@ -262,7 +262,7 @@ spec:
                 value: "shop_session-id=x-liveness-probe"
           env:
           - name: OTLP_SERVICE_ADDR
-            value: "otel-collector.default.svc.cluster.local"
+            value: "oteld-collector.default.svc.cluster.local"
           - name: OTLP_SERVICE_PORT
             value: "4317"
           - name: PORT
@@ -356,7 +356,7 @@ spec:
         - containerPort: 50051
         env:
         - name: OTLP_HOST
-          value: "otel-collector.default.svc.cluster.local"
+          value: "oteld-collector.default.svc.cluster.local"
         - name: OTLP_PORT
           value: "4317"
         - name: PORT
@@ -417,7 +417,7 @@ spec:
         - containerPort: 3550
         env:
         - name: OTLP_SERVICE_ADDR
-          value: "otel-collector.default.svc.cluster.local"
+          value: "oteld-collector.default.svc.cluster.local"
         - name: OTLP_SERVICE_PORT
           value: "4317"
         - name: PORT
@@ -479,7 +479,7 @@ spec:
       terminationGracePeriodSeconds: 5
       containers:
       - name: server
-        image: hrexed/cartservice-otel:0.1
+        image: hrexed/cartservice-otel:0.2
         imagePullPolicy: Always
         ports:
         - containerPort: 7070
@@ -487,7 +487,7 @@ spec:
         - name: OTLP_PORT
           value: "4317"
         - name: OTLP_HOST
-          value: "otel-collector.default.svc.cluster.local"
+          value: "oteld-collector.default.svc.cluster.local"
         - name: OTLP-SERVICENAME
           value: "cartservice"
         - name: REDIS_ADDR
@@ -551,11 +551,11 @@ spec:
               args: ["-u", "30", "-d", "55m"]
               env:
                 - name: FRONTEND_ADDR
-                  value: "onlineboutique.IP_TO_REPLACE.nip.io"
+                  value: "demo.IP_TO_REPLACE.nip.io"
                 - name: K6_PROMETHEUS_REMOTE_URL
                   value: http://prometheus-kube-prometheus-prometheus.default.svc.cluster.local:9090/api/v1/write
                 - name: OTLP_SERVICE_ADDR
-                  value: "otel-collector.default.svc.cluster.local:4317"
+                  value: "oteld-collector.default.svc.cluster.local:4317"
               resources:
                 requests:
                   cpu: 300m
@@ -593,7 +593,7 @@ spec:
           containerPort: 7000
         env:
         - name: OTLP_HOST
-          value: "otel-collector.default.svc.cluster.local"
+          value: "oteld-collector.default.svc.cluster.local"
         - name: OTLP_PORT
           value: "4317"
         - name: PORT
@@ -658,7 +658,7 @@ spec:
         - containerPort: 50051
         env:
         - name: OTLP_SERVICE_ADDR
-          value: "otel-collector.default.svc.cluster.local"
+          value: "oteld-collector.default.svc.cluster.local"
         - name: OTLP_SERVICE_PORT
           value: "4317"
         - name: PORT
@@ -788,7 +788,7 @@ spec:
         - containerPort: 9555
         env:
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: "http://otel-collector.default.svc.cluster.local:4317"
+          value: "http://oteld-collector.default.svc.cluster.local:4317"
         - name: OTEL_TRACES_EXPORTER
           value: "otlp"
         - name: PORT

@@ -1,6 +1,6 @@
 # Kubernestes Observabilty Demo
 
-This repository will explain how to deploy the various CNCF prouject to observe properly your Kubernetes cluster .
+This repository will explain how to deploy the various CNCF project to observe properly your Kubernetes cluster .
 This repository is based on the popular Demo platform provided by Google : The Online Boutique
 <p align="center">
 <img src="src/frontend/static/icons/Hipster_HeroLogoCyan.svg" width="300" alt="Online Boutique" />
@@ -32,9 +32,6 @@ The following tools need to be install on your machine :
 - gcloud ( if you are using GKE)
 - Helm
 
-This tutorial will generate traces and send them to Dynatrace.
-Therefore you will need a Dynatrace Tenant to be able to follow all the instructions of this tutorial .
-If you don't have any dynatrace tenant , then let's start a [trial on Dynatrace](https://www.dynatrace.com/trial/)
 
 ## Deployment Steps
 
@@ -79,12 +76,13 @@ With the public ip , we would be able to update the deployment of the ingress fo
 * grafana
 * K6
 ```
-IP=$(kubectl get svc nginx-ingress-nginx-controller -n ingress-nginx -ojson | jq -j '.status.loadBalancer.ingress[].ip')
+IP=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -ojson | jq -j '.status.loadBalancer.ingress[].ip')
 ```
 
 update the following files to update the ingress definitions :
 ```
 sed -i "s,IP_TO_REPLACE,$IP," kubernetes-manifests/k8s-manifest.yaml
+sed -i "s,IP_TO_REPLACE,$IP," grafana/ingress.yaml
 ```
 
 #### 4.Prometheus

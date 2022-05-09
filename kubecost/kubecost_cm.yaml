@@ -1,0 +1,18 @@
+apiVersion: v1
+data:
+  kubecost-token: aGVucmlrLnJleGVkQGR5bmF0cmFjZS5jb20=xm343yadf98
+  prometheus-alertmanager-endpoint: http://ALERT_MANAGER_TOREPLACE.default.svc:9093
+  prometheus-server-endpoint: http://PROMETHEUS_SVC_TOREPALCE.default.svc:9090
+kind: ConfigMap
+metadata:
+  annotations:
+    meta.helm.sh/release-name: kubecost
+    meta.helm.sh/release-namespace: kubecost
+  labels:
+    app: cost-analyzer
+    app.kubernetes.io/instance: kubecost
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: cost-analyzer
+    helm.sh/chart: cost-analyzer-1.92.0
+  name: kubecost-cost-analyzer
+  namespace: kubecost

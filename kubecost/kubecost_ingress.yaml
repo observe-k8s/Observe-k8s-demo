@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    meta.helm.sh/release-name: kubecost
+    meta.helm.sh/release-namespace: kubecost
+   generation: 1
+  labels:
+    app: cost-analyzer
+    app.kubernetes.io/instance: kubecost
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: cost-analyzer
+    helm.sh/chart: cost-analyzer-1.92.0
+  name: kubecost-cost-analyzer
+  namespace: kubecost
+spec:
+  rules:
+  - host: kubecost.IP_TO_REPLACE.nip.io
+    http:
+      paths:
+      - backend:
+          service:
+            name: kubecost-cost-analyzer
+            port:
+              name: tcp-frontend
+        path: /
+        pathType: ImplementationSpecific
+

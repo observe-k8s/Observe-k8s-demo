@@ -1,25 +1,56 @@
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
-  name: otel
+  name: oteld
 spec:
   mode: daemonset
   hostNetwork: true
+  image: otel/opentelemetry-collector-contrib:0.46.0
   config: |
     receivers:
       otlp:
         protocols:
           grpc:
           http:
+      zipkin:
+        endpoint: 0.0.0.0:9411
     processors:
+      batch:
+        send_batch_max_size: 1000
+        timeout: 30s
+        send_batch_size : 800
+      metricstransform:
+        transforms:
+           include: .+
+           match_type: regexp
+           action: update
+           operations:
+             - action: update_label
+               label: namespace
+               new_label: k8s.namespace.name
+             - action: add_label
+               new_label: dt.kubernetes.config.id
+               new_value: CLUSTER_ID_TOREPLACE
+             - action: update_label
+               label: uid
+               new_label: k8s.pod.uid
+             - action: update_label
+               label: system_uuid
+               new_label: dt.kubernetes.node.system_uuid
     exporters:
       logging:
-      otlphttp:
-        endpoint: TEMPO_SERIVCE_NAME:4317
-
+      otlp:
+        endpoint:  TEMPO_SERVICE_TOREPLACE.default.svc:4317
+      prometheus:
+        endpoint: "PROM_SERVICE_TOREPLACE.default.svc:9090"
+        namespace: "default"
     service:
       pipelines:
         traces:
-          receivers: [otlp]
+          receivers: [otlp,zipkin]
           processors: []
           exporters: [logging,otlphttp]
+        metrics:
+          receivers: [prometheus]
+          processors: [metricstransform,batch]
+          exporters: [logging,dynatrace]

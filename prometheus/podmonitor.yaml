@@ -1,0 +1,27 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  annotations:
+    meta.helm.sh/release-name: kubecost
+  labels:
+    app: cost-analyzer
+    app.kubernetes.io/instance: kubecost
+    app.kubernetes.io/name: cost-analyzer
+  namespace: kubecost
+  name: kubecost-cost-analyzer
+spec:
+  endpoints:
+    - honorLabels: true
+      interval: 1m
+      path: /metrics
+      port: tcp-model
+      scheme: http
+      scrapeTimeout: 10s
+  namespaceSelector:
+    matchNames:
+      - kubecost
+  selector:
+    matchLabels:
+      app: cost-analyzer
+      app.kubernetes.io/instance: kubecost
+      app.kubernetes.io/name: cost-analyzer
