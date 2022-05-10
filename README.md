@@ -32,21 +32,11 @@ The following tools need to be install on your machine :
 - gcloud ( if you are using GKE)
 - Helm
 
-## Quick start  (without gcp)
+This tutorial will generate traces and send them to Dynatrace.
+Therefore you will need a Dynatrace Tenant to be able to follow all the instructions of this tutorial .
+If you don't have any dynatrace tenant , then let's start a [trial on Dynatrace](https://www.dynatrace.com/trial/)
 
-First of all, build the demo image:
-
-```bash
-make build
-```
-
-Then, run the demo:
-
-```bash
-make run
-```
-
-## Deployment Steps to run the environment in GCP
+## Deployment Steps
 
 You will first need a Kubernetes cluster with 2 Nodes.
 You can either deploy on Minikube or K3s or follow the instructions to create GKE cluster:
@@ -89,13 +79,12 @@ With the public ip , we would be able to update the deployment of the ingress fo
 * grafana
 * K6
 ```
-IP=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -ojson | jq -j '.status.loadBalancer.ingress[].ip')
+IP=$(kubectl get svc nginx-ingress-nginx-controller -n ingress-nginx -ojson | jq -j '.status.loadBalancer.ingress[].ip')
 ```
 
 update the following files to update the ingress definitions :
 ```
 sed -i "s,IP_TO_REPLACE,$IP," kubernetes-manifests/k8s-manifest.yaml
-sed -i "s,IP_TO_REPLACE,$IP," grafana/ingress.yaml
 ```
 
 #### 4.Prometheus
