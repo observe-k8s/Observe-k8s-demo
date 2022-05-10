@@ -155,7 +155,7 @@ sed -i "s,LOKI_SERVICE_TOREPLACE,$LOKI_SERVICE," fluent/ClusterOutput_loki.yaml
 
 
 # Deploy the fluent agents
-kubectl apply -f fluent/ClusterOutput_loki.yaml  -n kubesphere-logging-system
+kubectl apply -f fluentbit_deployment.yaml  -n kubesphere-logging-system
 kubectl apply -f fluent/ClusterOutput_loki.yaml  -n kubesphere-logging-system
 
 # Deploy the Kubecost
