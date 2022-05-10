@@ -1,4 +1,4 @@
-# Kubernestes Observabilty Demo
+# Kubernestes Observability Demo
 
 This repository will explain how to deploy the various CNCF project to observe properly your Kubernetes cluster .
 This repository is based on the popular Demo platform provided by Google : The Online Boutique
