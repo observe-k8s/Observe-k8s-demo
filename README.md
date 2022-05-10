@@ -32,12 +32,9 @@ The following tools need to be install on your machine :
 - gcloud ( if you are using GKE)
 - Helm
 
-This tutorial will generate traces and send them to Dynatrace.
-Therefore you will need a Dynatrace Tenant to be able to follow all the instructions of this tutorial .
-If you don't have any dynatrace tenant , then let's start a [trial on Dynatrace](https://www.dynatrace.com/trial/)
 ## Getting started locally
 
-## Quick Start with k3d
+### Quick Start with k3d
 
 First of all, build the demo image:
 
