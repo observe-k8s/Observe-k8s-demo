@@ -35,8 +35,22 @@ The following tools need to be install on your machine :
 This tutorial will generate traces and send them to Dynatrace.
 Therefore you will need a Dynatrace Tenant to be able to follow all the instructions of this tutorial .
 If you don't have any dynatrace tenant , then let's start a [trial on Dynatrace](https://www.dynatrace.com/trial/)
+## Getting started locally
 
-## Deployment Steps
+## Quick Start with k3d
+
+First of all, build the demo image:
+
+```bash
+make build
+```
+
+Then, run the demo:
+
+```bash
+make run
+```
+## Deployment Steps in GCP 
 
 You will first need a Kubernetes cluster with 2 Nodes.
 You can either deploy on Minikube or K3s or follow the instructions to create GKE cluster:
