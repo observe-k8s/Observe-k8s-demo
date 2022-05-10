@@ -40,7 +40,7 @@ spec:
     exporters:
       logging:
       otlp:
-        endpoint:  TEMPO_SERVICE_TOREPLACE.default.svc:4317
+        endpoint:  TEMPO_SERVICE_TOREPLACE.tempo.svc:4317
       prometheus:
         endpoint: "PROM_SERVICE_TOREPLACE.default.svc:9090"
         namespace: "default"

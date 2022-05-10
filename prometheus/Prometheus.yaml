@@ -18,7 +18,6 @@ items:
       release: prometheus
     name: prometheus-kube-prometheus-prometheus
     namespace: default
-    resourceVersion: "296677324"
   spec:
     additionalScrapeConfigs:
       key: additionnalscrapeconfig.yaml
@@ -66,7 +65,7 @@ items:
       matchLabels:
         release: prometheus
     shards: 1
-    version: v2.32.1
+    version: v2.55.0
 kind: List
 metadata:
   resourceVersion: ""

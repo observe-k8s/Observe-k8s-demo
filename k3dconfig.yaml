@@ -1,0 +1,24 @@
+---
+apiVersion: k3d.io/v1alpha3
+kind: Simple
+name: observeK8s
+servers: 1
+kubeAPI:
+  host: "host.docker.internal" # make kubectl bind to host.docker.internal which will then be mapped to host-gateway via --add-host in docker run command
+ports:
+  - port: 80:80
+    nodeFilters:
+      - loadbalancer
+options:
+  k3d: # k3d runtime settings
+    wait: true # wait for cluster to be usable before returning; same as `--wait` (default: true)
+    timeout: "60s" # wait timeout before aborting; same as `--timeout 60s`
+    #disableLoadbalancer: true
+  k3s: # options passed on to K3s itself
+    extraArgs: # additional arguments passed to the `k3s server` command
+      - arg: --disable=traefik
+        nodeFilters:
+          - server:*
+  kubeconfig:
+    updateDefaultKubeconfig: true # add new cluster to your default Kubeconfig; same as `--kubeconfig-update-default` (default: true)
+    switchCurrentContext: true # also set current-context to the new cluster's context; same as `--kubeconfig-switch-context` (default: true)

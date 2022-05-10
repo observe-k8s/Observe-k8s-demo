@@ -8,6 +8,6 @@ metadata:
 spec:
   match: kube.*
   loki:
-    autoKubernetesLabels: true
-    host: LOKI_SERVICE_TOREPLACE.NAMESPACE_LOKI_TOREPLACE.svc
-    port:
+    autoKubernetesLabels: "on"
+    host: LOKI_SERVICE_TOREPLACE.loki.svc
+    port: 3100

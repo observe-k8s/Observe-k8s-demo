@@ -317,7 +317,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host :  "onlineboutique.IP_TO_REPLACE.nip.io"
+    - host :  "demo.IP_TO_REPLACE.nip.io"
       http:
         paths:
           - pathType: ImplementationSpecific
@@ -543,7 +543,7 @@ spec:
             sidecar.istio.io/rewriteAppHTTPProbers: "true"
         spec:
           terminationGracePeriodSeconds: 5
-          restartPolicy: Always
+          restartPolicy: OnFailure
           containers:
             - name: k6load
               image: hrexed/k6-prometheus-otlp:0.1

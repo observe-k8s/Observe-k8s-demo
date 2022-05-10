@@ -32,8 +32,21 @@ The following tools need to be install on your machine :
 - gcloud ( if you are using GKE)
 - Helm
 
+## Quick start  (without gcp)
 
-## Deployment Steps
+First of all, build the demo image:
+
+```bash
+make build
+```
+
+Then, run the demo:
+
+```bash
+make run
+```
+
+## Deployment Steps to run the environment in GCP
 
 You will first need a Kubernetes cluster with 2 Nodes.
 You can either deploy on Minikube or K3s or follow the instructions to create GKE cluster:
