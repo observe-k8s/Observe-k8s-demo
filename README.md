@@ -26,68 +26,45 @@ The Google HipsterShop is a microservice architecture using several langages :
 
 ## Prerequisite
 The following tools need to be install on your machine :
-- jq
-- kubectl
-- git
-- gcloud ( if you are using GKE)
-- Helm
 
-## Getting started locally
+* `jq`
+* `kubectl`
+* `eksctl`
+* `git`
+* `aws`
+* `helm`
 
-### Quick Start with k3d
+## Deployment Steps in EKS
 
-First of all, build the demo image:
+You will first need an EKS cluster:
 
-```bash
-make build
+```
+eksctl create cluster -f eks-cluster.yaml
 ```
 
-Then, run the demo:
+Next, clone the Github repository:
 
-```bash
-make run
-```
-## Deployment Steps in GCP 
-
-You will first need a Kubernetes cluster with 2 Nodes.
-You can either deploy on Minikube or K3s or follow the instructions to create GKE cluster:
-### 1.Create a Google Cloud Platform Project
-```
-PROJECT_ID="<your-project-id>"
-gcloud services enable container.googleapis.com --project ${PROJECT_ID}
-gcloud services enable monitoring.googleapis.com \
-    cloudtrace.googleapis.com \
-    clouddebugger.googleapis.com \
-    cloudprofiler.googleapis.com \
-    --project ${PROJECT_ID}
-```
-### 2.Create a GKE cluster
-```
-ZONE=us-central1-b
-gcloud container clusters create onlineboutique \
---project=${PROJECT_ID} --zone=${ZONE} \
---machine-type=e2-standard-2 --num-nodes=4
-```
-
-### 3.Clone the Github Repository
 ```
 git clone https://github.com/observe-k8s/Observe-k8s-demo
 cd Observe-k8s-demo
 ```
-### 4.Deploy Nginx Ingress Controller
+
+### 1. Deploy Ingress Controller
+
 ```
 helm upgrade --install ingress-nginx ingress-nginx \
   --repo https://kubernetes.github.io/ingress-nginx \
   --namespace ingress-nginx --create-namespace
 ```
-this command will install the nginx controller on the nodes having the label `observability`
 
-#### 1. get the ip adress of the ingress gateway
-Since we are using Ingress controller to route the traffic , we will need to get the public ip adress of our ingress.
-With the public ip , we would be able to update the deployment of the ingress for :
+Since we are using Ingress controller to route the traffic, we will need to
+get the public ip adress of our ingress. With the public IP, we would be able
+to update the deployment of the ingress for:
+
 * hipstershop
 * grafana
 * K6
+
 ```
 IP=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -ojson | jq -j '.status.loadBalancer.ingress[].ip')
 ```
@@ -98,15 +75,17 @@ sed -i "s,IP_TO_REPLACE,$IP," kubernetes-manifests/k8s-manifest.yaml
 sed -i "s,IP_TO_REPLACE,$IP," grafana/ingress.yaml
 ```
 
-### 5.Prometheus
-#### 1.Deploy
+### 2. Deploy Prometheus
+
+Install Prometheus via Helm:
 
 ```
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 helm install prometheus prometheus-community/kube-prometheus-stack --set sidecar.datasources.enabled=true --set sidecar.datasources.label=grafana_datasource --set sidecar.datasources.labelValue="1" --set sidecar.dashboards.enabled=true
 ```
-#### 2. Configure Prometheus by enabling the feature remo-writer
+
+Configure Prometheus by enabling `remote-writer`:
 
 To measure the impact of our experiments on use traffic , we will use the load testing tool named K6.
 K6 has a Prometheus integration that writes metrics to the Prometheus Server.
@@ -115,23 +94,30 @@ This integration requires to enable a feature in Prometheus named: remote-writer
 To enable this feature we will need to edit the CRD containing all the settings of promethes: prometehus
 
 To get the Prometheus object named use by prometheus we need to run the following command:
+
 ```
 kubectl get Prometheus
 ```
+
 here is the expected output:
+
 ```
 NAME                                    VERSION   REPLICAS   AGE
 prometheus-kube-prometheus-prometheus   v2.32.1   1          22h
 ```
+
 We will need to add an extra property in the configuration object :
 ```
 enableFeatures:
 - remote-write-receiver
 ```
+
 so to update the object :
+
 ```
 kubectl edit Prometheus prometheus-kube-prometheus-prometheus
 ```
+
 After the update your Prometheus object should look  like :
 ```
 apiVersion: monitoring.coreos.com/v1
@@ -199,29 +185,35 @@ spec:
   version: v2.32.1
 ```
 
-#### 3. Deploy Prometheus rules
+Deploy Prometheus rules:
+
 ```
 kubectl apply -f prometheus/PrometheusRule.yaml
 kubectl create secret generic addtional-scrape-configs --from-file=prometheus/additionnalscrapeconfig.yaml
 kubectl apply -f prometheus/Prometheus.yaml
 ```
-#### 4. Get The Prometheus serice
+
+Get the Prometheus service:
+
 ```
 PROMETHEUS_SERVER=$(kubectl get svc -l app=kube-prometheus-stack-prometheus -o jsonpath="{.items[0].metadata.name}")
 GRAFANA_SERVICE=$(kubectl get svc -l app.kubernetes.io/name=grafana -o jsonpath="{.items[0].metadata.name}")
 ALERT_MANAGER_SVC=$(kubectl get svc -l app=kube-prometheus-stack-alertmanager -o jsonpath="{.items[0].metadata.name}")
 ```
 
-### 6. Deploy the Opentelemetry Operator
+### 3. Deploy the Opentelemetry Operator
 
-#### Deploy the cert-manager
+Deploy the cert-manager:
+
 ```
 kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.6.1/cert-manager.yaml
 ```
-#### Wait for the service to be ready
+
+Wait for the service to be ready:
 ```
 kubectl get svc -n cert-manager
 ```
+
 After a few minutes, you should see:
 ```
 NAME                   TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
@@ -229,21 +221,21 @@ cert-manager           ClusterIP   10.99.253.6     <none>        9402/TCP   42h
 cert-manager-webhook   ClusterIP   10.99.253.123   <none>        443/TCP    42h
 ```
 
-#### Deploy the OpenTelemetry Operator
+Deploy the OpenTelemetry Operator:
+
 ```
 kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
 ```
 
-### 7. Configure the OpenTelemetry Collector
+Deploy Grafana Tempo:
 
-#### Deploy Grafana Tempo
 ```
 helm repo add grafana https://grafana.github.io/helm-charts
 helm repo update
 helm upgrade --install tempo grafana/tempo
 ```
 
-#### Udpate the openTelemetry manifest file
+Update the openTelemetry manifest file:
 ```
 TEMPO_SERICE_NAME=$(kubectl  get svc -l app.kubernetes.io/instance=tempo -n tempo -o jsonpath="{.items[0].metadata.name}")
 sed -i "s,TEMPO_SERIVCE_NAME,$TEMPO_SERICE_NAME," kubernetes-manifests/openTelemetry-manifest.yaml
@@ -252,12 +244,14 @@ CLUSTERID=$(kubectl get namespace kube-system -o jsonpath='{.metadata.uid}')
 sed -i "s,CLUSTER_ID_TOREPLACE,$CLUSTERID," kubernetes-manifests/openTelemetry-manifest.yaml
 ```
 
-### 8. FluentOperator
-#### Deploy FluentOperator
+### 4. Deploy the FluentOperator
+
 ```
 helm install fluent-operator --create-namespace -n kubesphere-logging-system https://github.com/fluent/fluent-operator/releases/download/v1.0.0/fluent-operator.tgz
 ```
-#### Deploy Loki
+
+Deploy Loki:
+
 ```
 kubectl create ns loki
 helm upgrade --install loki grafana/loki --namespace loki
@@ -265,19 +259,26 @@ kubectl wait pod -n loki -l  app=loki --for=condition=Ready --timeout=2m
 LOKI_SERVICE=$(kubectl  get svc -l app=loki  -n loki -o jsonpath="{.items[0].metadata.name}")
 sed -i "s,LOKI_SERVICE_TOREPLACE,$LOKI_SERVICE," fluent/ClusterOutput_loki.yaml
 ```
-#### Deploy fluent pipeline
+
+Deploy the Fluent Bit pipeline:
+
 ```
 kubectl apply -f fluentbit_deployment.yaml  -n kubesphere-logging-system
 kubectl apply -f fluent/ClusterOutput_loki.yaml  -n kubesphere-logging-system
 ```
-### 9. Kubecost
-#### Deploy
+
+### 5. Deploy Kubecost
+
+Install via Helm:
+
 ```
 kubectl create namespace kubecost
 helm repo add kubecost https://kubecost.github.io/cost-analyzer/
 helm install kubecost kubecost/cost-analyzer --namespace kubecost --set kubecostToken="aGVucmlrLnJleGVkQGR5bmF0cmFjZS5jb20=xm343yadf98" --set prometheus.kube-state-metrics.disabled=true --set prometheus.nodeExporter.enabled=false --set ingress.enabled=true --set ingress.hosts[0]="kubecost.$IP.nip.io" --set global.grafana.enabled=false --set global.grafana.fqdn="http://$GRAFANA_SERVICE.default.svc" --set prometheusRule.enabled=true --set global.prometheus.fqdn="http://$PROMETHEUS_SERVER.default.svc:9090" --set global.prometheus.enabled=false --set serviceMonitor.enabled=true
 ```
-#### Configure
+
+Configure Kubecost:
+
 ```
 sed -i "s,IP_TO_REPLACE,$IP," kubecost/kubecost_ingress.yaml
 kubectl apply -f  kubecost/kubecost_ingress.yaml -n kubecost
@@ -288,7 +289,8 @@ kubectl apply -n kubecost -f kubecost/kubecost_cm.yaml
 kubectl apply -n kubecost -f kubecost/kubecost_nginx_cm.yaml
 kubectl delete pod -n kubecost -l app=cost-analyzer
 ```
-### 10. Update Grafana Datasource
+### 6. Update Grafana Datasource
+
 ```
 echo "adding the various datasource in Grafana"
 sed -i "s,PROMEHTEUS_TO_REPLACE,$PROMETHEUS_SERVER," grafana/prometheus-datasource.yaml
@@ -296,22 +298,16 @@ sed -i "s,LOKI_TO_REPLACE,$LOKI_SERVICE," grafana/prometheus-datasource.yaml
 sed -i "s,TEMPO_TO_REPLACE,$TEMPO_SERICE_NAME," grafana/prometheus-datasource.yaml
 kubectl apply -f  grafana/prometheus-datasource.yaml
 ```
-### 11. Deploy OnlineBoutique
+### 7. Deploy OnlineBoutique
+
 ```
 kubectl create ns hipster-shop
 kubectl apply -f kubernetes-manifests/k8s-manifest.yaml -n hipster-shop
 ```
 
-### 12. Deploy the OpenTelemetry Collector
+### 8. Deploy the OpenTelemetry Collector
 ```
 kubectl apply -f kubernetes-manifests/openTelemetry-manifest.yaml
-```
-
-
-### 13 [Optional] **Clean up**: TODO
-```
-gcloud container clusters delete onlineboutique \
-    --project=${PROJECT_ID} --zone=${ZONE}
 ```
 
 ## Architecture
