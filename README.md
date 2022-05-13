@@ -53,40 +53,36 @@ aws iam create-policy \
     --policy-document file://iam-policy.json
 ```
 
-Now take note of the policy ARN that is returned from the previous command
-and use this as an input to create an IAM role along with a Kubernestes service
-account for the AWS Load Balancer controller:
+Next, create an IAM role along with a Kubernestes service account for the 
+AWS Load Balancer controller by replacing `$AWS_ACCOUNT_ID` in the following
+command with your own AWS account ID (and replace `region`, if necessary):
 
 ```
 eksctl create iamserviceaccount \
---cluster=observe-k8s-wg \
---namespace=kube-system \
---name=aws-load-balancer-controller \
---attach-policy-arn=arn:aws:iam::$AWS_ACCOUNT_ID:policy/AWSLoadBalancerControllerIAMPolicy \
---override-existing-serviceaccounts \
---region eu-west-1 \
---approve
+       --cluster=observe-k8s-wg \
+       --namespace=kube-system \
+       --name=aws-load-balancer-controller \
+       --attach-policy-arn=arn:aws:iam::$AWS_ACCOUNT_ID:policy/AWSLoadBalancerControllerIAMPolicy \
+       --override-existing-serviceaccounts \
+       --region eu-west-1 \
+       --approve
 ```
 
-Since we are using an ingress controller to route the traffic, we need to
-get the public IP adress of our ingress. With the public IP, we then are in
-the position to update the deployment of the ingress for:
-
-* Hipstershop
-* Grafana
-* K6
-
-First, query the public IP like so:
+Now we can install the AWS Load Balancer Controller using Helm like so:
 
 ```
-IP=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -ojson | jq -j '.status.loadBalancer.ingress[].ip')
+helm repo add eks https://aws.github.io/eks-charts
+
+helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
+     -n kube-system \
+     --set clusterName=observe-k8s-wg \
+     --set serviceAccount.create=false \
+     --set serviceAccount.name=aws-load-balancer-controller
 ```
 
-update the following files to update the ingress definitions :
-```
-sed -i "s,IP_TO_REPLACE,$IP," kubernetes-manifests/k8s-manifest.yaml
-sed -i "s,IP_TO_REPLACE,$IP," grafana/ingress.yaml
-```
+To verify if the controller was installed properly and is up and running you 
+can use `kubectl -n kube-system get all` and you would expect the respective
+pods and the service to show up there.
 
 ### 2. Deploy Prometheus
 

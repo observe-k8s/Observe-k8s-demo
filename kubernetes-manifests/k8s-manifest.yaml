@@ -314,10 +314,13 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: onlineboutique-ingress
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
 spec:
-  ingressClassName: nginx
+  ingressClassName: alb
   rules:
-    - host :  "demo.IP_TO_REPLACE.nip.io"
+    - host : "demo.2022-05-cncf-tag-o11y.nip.io"
       http:
         paths:
           - pathType: ImplementationSpecific
@@ -551,7 +554,7 @@ spec:
               args: ["-u", "30", "-d", "55m"]
               env:
                 - name: FRONTEND_ADDR
-                  value: "demo.IP_TO_REPLACE.nip.io"
+                  value: "demo.2022-05-cncf-tag-o11y.nip.io"
                 - name: K6_PROMETHEUS_REMOTE_URL
                   value: http://prometheus-kube-prometheus-prometheus.default.svc.cluster.local:9090/api/v1/write
                 - name: OTLP_SERVICE_ADDR
