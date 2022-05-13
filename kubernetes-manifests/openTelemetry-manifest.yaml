@@ -51,6 +51,6 @@ spec:
           processors: []
           exporters: [logging,otlphttp]
         metrics:
-          receivers: [prometheus]
+          receivers: [otlp]
           processors: [metricstransform,batch]
-          exporters: [logging,dynatrace]
+          exporters: [logging,prometheus]

@@ -240,7 +240,7 @@ kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releas
 ```
 helm repo add grafana https://grafana.github.io/helm-charts
 helm repo update
-helm upgrade --install tempo grafana/tempo
+helm upgrade --install tempo grafana/tempo --namespace tempo
 ```
 
 #### Udpate the openTelemetry manifest file
@@ -267,7 +267,7 @@ sed -i "s,LOKI_SERVICE_TOREPLACE,$LOKI_SERVICE," fluent/ClusterOutput_loki.yaml
 ```
 #### Deploy fluent pipeline
 ```
-kubectl apply -f fluentbit_deployment.yaml  -n kubesphere-logging-system
+kubectl apply -f fluent/fluentbit_deployment.yaml  -n kubesphere-logging-system
 kubectl apply -f fluent/ClusterOutput_loki.yaml  -n kubesphere-logging-system
 ```
 ### 9. Kubecost
@@ -291,7 +291,6 @@ kubectl delete pod -n kubecost -l app=cost-analyzer
 ### 10. Update Grafana Datasource
 ```
 echo "adding the various datasource in Grafana"
-sed -i "s,PROMEHTEUS_TO_REPLACE,$PROMETHEUS_SERVER," grafana/prometheus-datasource.yaml
 sed -i "s,LOKI_TO_REPLACE,$LOKI_SERVICE," grafana/prometheus-datasource.yaml
 sed -i "s,TEMPO_TO_REPLACE,$TEMPO_SERICE_NAME," grafana/prometheus-datasource.yaml
 kubectl apply -f  grafana/prometheus-datasource.yaml
