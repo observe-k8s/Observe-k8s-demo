@@ -45,7 +45,7 @@ data:
         server kubecost-cost-analyzer.kubecost:9003;
     }
     upstream grafana {
-        server GRAFANA_SERICE_TOREPLACE.default.svc;
+        server prometheus-grafana.default.svc;
     }
 
     server {

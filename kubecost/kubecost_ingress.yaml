@@ -15,7 +15,7 @@ metadata:
   namespace: kubecost
 spec:
   rules:
-  - host: kubecost.IP_TO_REPLACE.nip.io
+  - host: kubecost.2022-05-cncf-tag-o11y.nip.io
     http:
       paths:
       - backend:

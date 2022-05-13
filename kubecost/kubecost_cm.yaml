@@ -1,8 +1,8 @@
 apiVersion: v1
 data:
   kubecost-token: aGVucmlrLnJleGVkQGR5bmF0cmFjZS5jb20=xm343yadf98
-  prometheus-alertmanager-endpoint: http://ALERT_MANAGER_TOREPLACE.default.svc:9093
-  prometheus-server-endpoint: http://PROMETHEUS_SVC_TOREPALCE.default.svc:9090
+  prometheus-alertmanager-endpoint: http://prometheus-kube-prometheus-alertmanager.default.svc:9093
+  prometheus-server-endpoint: http://prometheus-kube-prometheus-prometheus.default.svc:9090
 kind: ConfigMap
 metadata:
   annotations:

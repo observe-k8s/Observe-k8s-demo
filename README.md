@@ -241,20 +241,33 @@ Install via Helm:
 
 ```
 kubectl create namespace kubecost
+
 helm repo add kubecost https://kubecost.github.io/cost-analyzer/
-helm install kubecost kubecost/cost-analyzer --namespace kubecost --set kubecostToken="aGVucmlrLnJleGVkQGR5bmF0cmFjZS5jb20=xm343yadf98" --set prometheus.kube-state-metrics.disabled=true --set prometheus.nodeExporter.enabled=false --set ingress.enabled=true --set ingress.hosts[0]="kubecost.$IP.nip.io" --set global.grafana.enabled=false --set global.grafana.fqdn="http://$GRAFANA_SERVICE.default.svc" --set prometheusRule.enabled=true --set global.prometheus.fqdn="http://$PROMETHEUS_SERVER.default.svc:9090" --set global.prometheus.enabled=false --set serviceMonitor.enabled=true
+
+helm install kubecost kubecost/cost-analyzer \
+     --namespace kubecost \
+     --set kubecostToken="aGVucmlrLnJleGVkQGR5bmF0cmFjZS5jb20=xm343yadf98" \
+     --set prometheus.kube-state-metrics.disabled=true \
+     --set prometheus.nodeExporter.enabled=false \
+     --set ingress.enabled=true \
+     --set ingress.hosts[0]="kubecost.2022-05-cncf-tag-o11y.nip.io" \
+     --set global.grafana.enabled=false \
+     --set global.grafana.fqdn="http://prometheus-grafana.default.svc" \
+     --set prometheusRule.enabled=true \
+     --set global.prometheus.fqdn="http://prometheus-kube-prometheus-prometheus.default.svc:9090" \
+     --set global.prometheus.enabled=false \
+     --set serviceMonitor.enabled=true
 ```
 
 Configure Kubecost:
 
 ```
-sed -i "s,IP_TO_REPLACE,$IP," kubecost/kubecost_ingress.yaml
 kubectl apply -f  kubecost/kubecost_ingress.yaml -n kubecost
-sed -i "s,ALERT_MANAGER_TOREPLACE,$ALERT_MANAGER_SVC," kubecost/kubecost_cm.yaml
-sed -i "s,PROMETHEUS_SVC_TOREPALCE,$PROMETHEUS_SERVER," kubecost/kubecost_cm.yaml
-sed -i "s,GRAFANA_SERICE_TOREPLACE,$GRAFANA_SERVICE," kubecost/kubecost_nginx_cm.yaml
+
 kubectl apply -n kubecost -f kubecost/kubecost_cm.yaml
+
 kubectl apply -n kubecost -f kubecost/kubecost_nginx_cm.yaml
+
 kubectl delete pod -n kubecost -l app=cost-analyzer
 ```
 ### 6. Update Grafana Datasource
