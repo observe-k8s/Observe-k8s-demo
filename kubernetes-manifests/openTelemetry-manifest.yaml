@@ -49,7 +49,7 @@ spec:
         traces:
           receivers: [otlp,zipkin]
           processors: []
-          exporters: [logging,otlphttp]
+          exporters: [logging,otlp]
         metrics:
           receivers: [otlp]
           processors: [metricstransform,batch]
