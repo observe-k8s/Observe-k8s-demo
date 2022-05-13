@@ -30,7 +30,7 @@ spec:
                new_label: k8s.namespace.name
              - action: add_label
                new_label: dt.kubernetes.config.id
-               new_value: CLUSTER_ID_TOREPLACE
+               new_value: a1d81911-b6bf-4f47-874a-41da3fecbc7e
              - action: update_label
                label: uid
                new_label: k8s.pod.uid
@@ -40,10 +40,12 @@ spec:
     exporters:
       logging:
       otlp:
-        endpoint:  TEMPO_SERVICE_TOREPLACE.tempo.svc:4317
+        endpoint: TEMPO_TO_REPLACE.tempo.svc:4317
+        tls:
+          insecure: true
       prometheus:
-        endpoint: "PROM_SERVICE_TOREPLACE.default.svc:9090"
-        namespace: "default"
+        endpoint: "0.0.0.0:9090"
+        namespace: default
     service:
       pipelines:
         traces:

@@ -553,7 +553,7 @@ spec:
                 - name: FRONTEND_ADDR
                   value: "demo.IP_TO_REPLACE.nip.io"
                 - name: K6_PROMETHEUS_REMOTE_URL
-                  value: http://prometheus-kube-prometheus-prometheus.default.svc.cluster.local:9090/api/v1/write
+                  value: http://PROMETHEUS_SVC_TOREPALCE.default.svc.cluster.local:9090/api/v1/write
                 - name: OTLP_SERVICE_ADDR
                   value: "oteld-collector.default.svc.cluster.local:4317"
               resources:

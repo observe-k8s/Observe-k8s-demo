@@ -240,13 +240,14 @@ kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releas
 ```
 helm repo add grafana https://grafana.github.io/helm-charts
 helm repo update
+kubectl create ns tempo
 helm upgrade --install tempo grafana/tempo --namespace tempo
 ```
 
 #### Udpate the openTelemetry manifest file
 ```
 TEMPO_SERICE_NAME=$(kubectl  get svc -l app.kubernetes.io/instance=tempo -n tempo -o jsonpath="{.items[0].metadata.name}")
-sed -i "s,TEMPO_SERIVCE_NAME,$TEMPO_SERICE_NAME," kubernetes-manifests/openTelemetry-manifest.yaml
+sed -i "s,TEMPO_SERVICE_TOREPLACE,$TEMPO_SERICE_NAME," kubernetes-manifests/openTelemetry-manifest.yaml
 sed -i "s,PROM_SERVICE_TOREPLACE,$PROMETHEUS_SERVER," kubernetes-manifests/openTelemetry-manifest.yaml
 CLUSTERID=$(kubectl get namespace kube-system -o jsonpath='{.metadata.uid}')
 sed -i "s,CLUSTER_ID_TOREPLACE,$CLUSTERID," kubernetes-manifests/openTelemetry-manifest.yaml
@@ -295,15 +296,16 @@ sed -i "s,LOKI_TO_REPLACE,$LOKI_SERVICE," grafana/prometheus-datasource.yaml
 sed -i "s,TEMPO_TO_REPLACE,$TEMPO_SERICE_NAME," grafana/prometheus-datasource.yaml
 kubectl apply -f  grafana/prometheus-datasource.yaml
 ```
-### 11. Deploy OnlineBoutique
-```
-kubectl create ns hipster-shop
-kubectl apply -f kubernetes-manifests/k8s-manifest.yaml -n hipster-shop
-```
 
-### 12. Deploy the OpenTelemetry Collector
+### 11. Deploy the OpenTelemetry Collector
 ```
 kubectl apply -f kubernetes-manifests/openTelemetry-manifest.yaml
+```
+### 12. Deploy OnlineBoutique
+```
+kubectl create ns hipster-shop
+sed -i "s,PROMETHEUS_SVC_TOREPALCE,$PROMETHEUS_SERVER," kubernetes-manifests/k8s-manifest.yaml
+kubectl apply -f kubernetes-manifests/k8s-manifest.yaml -n hipster-shop
 ```
 
 
