@@ -262,13 +262,13 @@ helm install kubecost kubecost/cost-analyzer \
 Configure Kubecost:
 
 ```
-kubectl apply -f  kubecost/kubecost_ingress.yaml -n kubecost
+kubectl -n kubecost apply -f  kubecost/kubecost_ingress.yaml
 
-kubectl apply -n kubecost -f kubecost/kubecost_cm.yaml
+kubectl -n kubecost apply -f kubecost/kubecost_cm.yaml
 
-kubectl apply -n kubecost -f kubecost/kubecost_nginx_cm.yaml
+kubectl -n kubecost apply -f kubecost/kubecost_nginx_cm.yaml
 
-kubectl delete pod -n kubecost -l app=cost-analyzer
+kubectl -n kubecost delete pod -l app=cost-analyzer
 ```
 ### 6. Update Grafana Datasource
 
