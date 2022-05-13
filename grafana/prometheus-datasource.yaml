@@ -5,14 +5,14 @@ data:
     datasources:
     - name: Loki
       type: loki
-      url: http://LOKI_TO_REPLACE.loki.svc:3100/
+      url: http://loki.loki.svc:3100/
       access: proxy
       isDefault: true
       jsonData:
         timeInterval: 30s
     - name: Tempo
       type: tempo
-      url: http://TEMPO_TO_REPLACE.tempo.svc:3100/
+      url: http://tempo.tempo.svc:3100/
       access: proxy
       jsonData:
         httpMethod: GET

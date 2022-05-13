@@ -273,10 +273,6 @@ kubectl -n kubecost delete pod -l app=cost-analyzer
 ### 6. Update Grafana Datasource
 
 ```
-echo "adding the various datasource in Grafana"
-sed -i "s,PROMEHTEUS_TO_REPLACE,$PROMETHEUS_SERVER," grafana/prometheus-datasource.yaml
-sed -i "s,LOKI_TO_REPLACE,$LOKI_SERVICE," grafana/prometheus-datasource.yaml
-sed -i "s,TEMPO_TO_REPLACE,$TEMPO_SERICE_NAME," grafana/prometheus-datasource.yaml
 kubectl apply -f  grafana/prometheus-datasource.yaml
 ```
 ### 7. Deploy OnlineBoutique
