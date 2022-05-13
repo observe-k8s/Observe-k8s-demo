@@ -275,14 +275,17 @@ kubectl -n kubecost delete pod -l app=cost-analyzer
 ```
 kubectl apply -f  grafana/prometheus-datasource.yaml
 ```
+
 ### 7. Deploy OnlineBoutique
 
 ```
 kubectl create ns hipster-shop
-kubectl apply -f kubernetes-manifests/k8s-manifest.yaml -n hipster-shop
+
+kubectl -n hipster-shop apply -f kubernetes-manifests/k8s-manifest.yaml
 ```
 
 ### 8. Deploy the OpenTelemetry Collector
+
 ```
 kubectl apply -f kubernetes-manifests/openTelemetry-manifest.yaml
 ```
