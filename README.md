@@ -17,11 +17,15 @@ The following tools need to be installed on your local machine:
 ## Deployment Steps in EKS
 
 You will first need an EKS cluster, so let's create one with the provided
-configuration file [`eks-cluster.yaml`](./eks-cluster.yaml)
+configuration file [`eks-cluster.yaml`](./eks-cluster.yaml):
 
 ```
 eksctl create cluster -f eks-cluster.yaml
 ```
+
+Note that the cluster config provided has the region fixed to `eu-west-1`.
+If you want to deploy the EKS cluster in another region you will have to 
+change this (as well as everywhere below where the region is required).
 
 Next, clone the Github repository:
 
@@ -32,19 +36,46 @@ cd Observe-k8s-demo
 
 ### 1. Deploy Ingress Controller
 
+We're using the
+[AWS Load Balancer Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.4/deploy/installation/)
+to manage ingress resources that we use in the demo to make our frontends
+such as Grafana publicly accessible.
+
+The OIDC provider is already configured (via `eks-cluster.yaml`), so first we
+get the IAM policy for the AWS Load Balancer Controller in place:
+
 ```
-helm upgrade --install ingress-nginx ingress-nginx \
-  --repo https://kubernetes.github.io/ingress-nginx \
-  --namespace ingress-nginx --create-namespace
+curl -o iam-policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.4.1/docs/install/iam_policy.json
+
+aws iam create-policy \
+    --policy-name AWSLoadBalancerControllerIAMPolicy \
+    --policy-document file://iam-policy.json
 ```
 
-Since we are using Ingress controller to route the traffic, we will need to
-get the public ip adress of our ingress. With the public IP, we would be able
-to update the deployment of the ingress for:
+Now take note of the policy ARN that is returned from the previous command
+and use this as an input to create an IAM role along with a Kubernestes service
+account for the AWS Load Balancer controller:
 
-* hipstershop
-* grafana
+```
+eksctl create iamserviceaccount \
+--cluster=observe-k8s-wg \
+--namespace=kube-system \
+--name=aws-load-balancer-controller \
+--attach-policy-arn=arn:aws:iam::$AWS_ACCOUNT_ID:policy/AWSLoadBalancerControllerIAMPolicy \
+--override-existing-serviceaccounts \
+--region eu-west-1 \
+--approve
+```
+
+Since we are using an ingress controller to route the traffic, we need to
+get the public IP adress of our ingress. With the public IP, we then are in
+the position to update the deployment of the ingress for:
+
+* Hipstershop
+* Grafana
 * K6
+
+First, query the public IP like so:
 
 ```
 IP=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -ojson | jq -j '.status.loadBalancer.ingress[].ip')
