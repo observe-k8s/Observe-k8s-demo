@@ -86,194 +86,153 @@ pods and the service to show up there.
 
 ### 2. Deploy Prometheus
 
-Install Prometheus via Helm:
+Install the Prometheus stack via Helm:
 
 ```
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+
 helm repo update
-helm install prometheus prometheus-community/kube-prometheus-stack --set sidecar.datasources.enabled=true --set sidecar.datasources.label=grafana_datasource --set sidecar.datasources.labelValue="1" --set sidecar.dashboards.enabled=true
+
+helm install prometheus prometheus-community/kube-prometheus-stack \
+     --set sidecar.datasources.enabled=true \
+     --set sidecar.datasources.label=grafana_datasource \
+     --set sidecar.datasources.labelValue="1" \
+     --set sidecar.dashboards.enabled=true
 ```
 
-Configure Prometheus by enabling `remote-writer`:
+To measure the impact of our experiments on the traffic, we use the load testing
+tool named K6, which has a Prometheus integration that writes metrics to the 
+Prometheus server. This integration requires us to enable the `remote-write`
+feature in Prometheus. For this to happen we next need to edit the Prometheus CRD 
+containing the respective settings.
 
-To measure the impact of our experiments on use traffic , we will use the load testing tool named K6.
-K6 has a Prometheus integration that writes metrics to the Prometheus Server.
-This integration requires to enable a feature in Prometheus named: remote-writer
-
-To enable this feature we will need to edit the CRD containing all the settings of promethes: prometehus
-
-To get the Prometheus object named use by prometheus we need to run the following command:
+To get the Prometheus CRD, do:
 
 ```
-kubectl get Prometheus
-```
-
-here is the expected output:
-
-```
+$ kubectl get Prometheus
 NAME                                    VERSION   REPLICAS   AGE
-prometheus-kube-prometheus-prometheus   v2.32.1   1          22h
+prometheus-kube-prometheus-prometheus   v2.35.0   1          2m51s
 ```
 
-We will need to add an extra property in the configuration object :
-```
-enableFeatures:
-- remote-write-receiver
-```
-
-so to update the object :
+So, to update the Prometheus CRD, execute the following (which will open up
+the CRD in your editor):
 
 ```
 kubectl edit Prometheus prometheus-kube-prometheus-prometheus
 ```
 
-After the update your Prometheus object should look  like :
+Now add an extra property to the Prometheus CRD under the `spec` key as follows:
+
 ```
-apiVersion: monitoring.coreos.com/v1
-kind: Prometheus
-metadata:
-  annotations:
-    meta.helm.sh/release-name: prometheus
-    meta.helm.sh/release-namespace: default
-  generation: 2
-  labels:
-    app: kube-prometheus-stack-prometheus
-    app.kubernetes.io/instance: prometheus
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 30.0.1
-    chart: kube-prometheus-stack-30.0.1
-    heritage: Helm
-    release: prometheus
-  name: prometheus-kube-prometheus-prometheus
-  namespace: default
+...
 spec:
-  alerting:
-  alertmanagers:
-  - apiVersion: v2
-    name: prometheus-kube-prometheus-alertmanager
-    namespace: default
-    pathPrefix: /
-    port: http-web
-  enableAdminAPI: false
+  ...
   enableFeatures:
   - remote-write-receiver
-  externalUrl: http://prometheus-kube-prometheus-prometheus.default:9090
-  image: quay.io/prometheus/prometheus:v2.32.1
-  listenLocal: false
-  logFormat: logfmt
-  logLevel: info
-  paused: false
-  podMonitorNamespaceSelector: {}
-  podMonitorSelector:
-  matchLabels:
-  release: prometheus
-  portName: http-web
-  probeNamespaceSelector: {}
-  probeSelector:
-  matchLabels:
-  release: prometheus
-  replicas: 1
-  retention: 10d
-  routePrefix: /
-  ruleNamespaceSelector: {}
-  ruleSelector:
-  matchLabels:
-  release: prometheus
-  securityContext:
-  fsGroup: 2000
-  runAsGroup: 2000
-  runAsNonRoot: true
-  runAsUser: 1000
-  serviceAccountName: prometheus-kube-prometheus-prometheus
-  serviceMonitorNamespaceSelector: {}
-  serviceMonitorSelector:
-  matchLabels:
-  release: prometheus
-  shards: 1
-  version: v2.32.1
+  ...
 ```
 
-Deploy Prometheus rules:
+After you've saved the file and exited your editor you should see the following
+confirmation:
+
+```
+prometheus.monitoring.coreos.com/prometheus-kube-prometheus-prometheus edited
+```
+
+Now you can deploy the Prometheus rules:
 
 ```
 kubectl apply -f prometheus/PrometheusRule.yaml
-kubectl create secret generic addtional-scrape-configs --from-file=prometheus/additionnalscrapeconfig.yaml
+
+kubectl create secret generic addtional-scrape-configs \
+        --from-file=prometheus/additionnalscrapeconfig.yaml
+
 kubectl apply -f prometheus/Prometheus.yaml
 ```
 
-Get the Prometheus service:
+Finally, capture the Prometheus services as follows (assuming you're using
+Bash):
 
 ```
 PROMETHEUS_SERVER=$(kubectl get svc -l app=kube-prometheus-stack-prometheus -o jsonpath="{.items[0].metadata.name}")
+
 GRAFANA_SERVICE=$(kubectl get svc -l app.kubernetes.io/name=grafana -o jsonpath="{.items[0].metadata.name}")
+
 ALERT_MANAGER_SVC=$(kubectl get svc -l app=kube-prometheus-stack-alertmanager -o jsonpath="{.items[0].metadata.name}")
 ```
 
 ### 3. Deploy the Opentelemetry Operator
 
-Deploy the cert-manager:
+For the OpenTelemetry operator to work, we first need to deploy the cert-manager:
 
 ```
 kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.6.1/cert-manager.yaml
 ```
 
-Wait for the service to be ready:
-```
-kubectl get svc -n cert-manager
-```
+Wait for the cert-manager to be ready using `kubectl -n cert-manager get all`
+to check the state.
 
-After a few minutes, you should see:
-```
-NAME                   TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
-cert-manager           ClusterIP   10.99.253.6     <none>        9402/TCP   42h
-cert-manager-webhook   ClusterIP   10.99.253.123   <none>        443/TCP    42h
-```
-
-Deploy the OpenTelemetry Operator:
+Now we can deploy the OpenTelemetry operator:
 
 ```
 kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
 ```
 
-Deploy Grafana Tempo:
+Deploy Grafana Tempo for distributed tracing:
 
 ```
 helm repo add grafana https://grafana.github.io/helm-charts
+
 helm repo update
-helm upgrade --install tempo grafana/tempo
+
+kubectl create ns tempo
+
+helm upgrade --install --namespace tempo tempo grafana/tempo
 ```
 
-Update the openTelemetry manifest file:
+And now update the OpenTelemetry manifest file like so (again, assuming Bash):
+
 ```
 TEMPO_SERICE_NAME=$(kubectl  get svc -l app.kubernetes.io/instance=tempo -n tempo -o jsonpath="{.items[0].metadata.name}")
+
 sed -i "s,TEMPO_SERIVCE_NAME,$TEMPO_SERICE_NAME," kubernetes-manifests/openTelemetry-manifest.yaml
+
 sed -i "s,PROM_SERVICE_TOREPLACE,$PROMETHEUS_SERVER," kubernetes-manifests/openTelemetry-manifest.yaml
+
 CLUSTERID=$(kubectl get namespace kube-system -o jsonpath='{.metadata.uid}')
+
 sed -i "s,CLUSTER_ID_TOREPLACE,$CLUSTERID," kubernetes-manifests/openTelemetry-manifest.yaml
 ```
 
 ### 4. Deploy the FluentOperator
 
+Deploy the FluentOperator using:
+
 ```
-helm install fluent-operator --create-namespace -n kubesphere-logging-system https://github.com/fluent/fluent-operator/releases/download/v1.0.0/fluent-operator.tgz
+kubectl create ns fluent
+
+kubectl apply -f https://raw.githubusercontent.com/fluent/fluent-operator/release-1.0/manifests/setup/setup.yaml
 ```
 
 Deploy Loki:
 
 ```
 kubectl create ns loki
+
 helm upgrade --install loki grafana/loki --namespace loki
+
 kubectl wait pod -n loki -l  app=loki --for=condition=Ready --timeout=2m
+
 LOKI_SERVICE=$(kubectl  get svc -l app=loki  -n loki -o jsonpath="{.items[0].metadata.name}")
+
 sed -i "s,LOKI_SERVICE_TOREPLACE,$LOKI_SERVICE," fluent/ClusterOutput_loki.yaml
 ```
 
 Deploy the Fluent Bit pipeline:
 
 ```
-kubectl apply -f fluentbit_deployment.yaml  -n kubesphere-logging-system
-kubectl apply -f fluent/ClusterOutput_loki.yaml  -n kubesphere-logging-system
+kubectl -n fluent apply -f fluent/fluentbit_deployment.yaml
+kubectl -n fluent apply -f fluent/ClusterOutput_loki.yaml
 ```
 
 ### 5. Deploy Kubecost
