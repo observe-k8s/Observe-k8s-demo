@@ -27,7 +27,7 @@ Note that the cluster config provided has the region fixed to `eu-west-1`.
 If you want to deploy the EKS cluster in another region you will have to 
 change this (as well as everywhere below where the region is required).
 
-Next, clone the Github repository:
+Next, clone the Git repo that contains the demo app:
 
 ```
 git clone https://github.com/observe-k8s/Observe-k8s-demo
@@ -45,7 +45,8 @@ The OIDC provider is already configured (via `eks-cluster.yaml`), so first we
 get the IAM policy for the AWS Load Balancer Controller in place:
 
 ```
-curl -o iam-policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.4.1/docs/install/iam_policy.json
+curl https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.4.1/docs/install/iam_policy.json \
+     -o iam-policy.json
 
 aws iam create-policy \
     --policy-name AWSLoadBalancerControllerIAMPolicy \
