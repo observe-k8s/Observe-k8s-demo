@@ -30,7 +30,7 @@ spec:
                new_label: k8s.namespace.name
              - action: add_label
                new_label: dt.kubernetes.config.id
-               new_value: a1d81911-b6bf-4f47-874a-41da3fecbc7e
+               new_value: CLUSTER_ID_TOREPLACE
              - action: update_label
                label: uid
                new_label: k8s.pod.uid
