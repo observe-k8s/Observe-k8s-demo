@@ -12,10 +12,6 @@ spec:
       labels:
         app: emailservice
         product: hipster-shop
-      annotations:
-        metrics.dynatrace.com/path: /stats/prometheus
-        metrics.dynatrace.com/port: "15020"
-        metrics.dynatrace.com/scrape: "true"
     spec:
       terminationGracePeriodSeconds: 5
       containers:
@@ -78,10 +74,6 @@ spec:
       labels:
         app: checkoutservice
         product: hipster-shop
-      annotations:
-        metrics.dynatrace.com/path: /stats/prometheus
-        metrics.dynatrace.com/port: "15020"
-        metrics.dynatrace.com/scrape: "true"
     spec:
       containers:
         - name: server
@@ -157,13 +149,8 @@ spec:
       labels:
         app: recommendationservice
         product: hipster-shop
-      annotations:
-        metrics.dynatrace.com/path: /stats/prometheus
-        metrics.dynatrace.com/port: "15020"
-        metrics.dynatrace.com/scrape: "true"
     spec:
       terminationGracePeriodSeconds: 5
- # imagePullsecrets required for perform2019????      
       imagePullSecrets:
         - name: demo-registry
       containers:
@@ -230,16 +217,9 @@ spec:
       labels:
         app: frontend
         product: hipster-shop
-      annotations:
-        sidecar.istio.io/rewriteAppHTTPProbers: "true"
-        metrics.dynatrace.com/path: /stats/prometheus
-        metrics.dynatrace.com/port: "15020"
-        metrics.dynatrace.com/scrape: "true"
     spec:
       containers:
         - name: server
-          # both look good
-          #image: registry.lab.dynatrace.org/cloudplatform/hipster-shop-frontend
           image: hrexed/frontend-otel:0.1
           imagePullPolicy: Always
           ports:
@@ -320,11 +300,11 @@ metadata:
 spec:
   ingressClassName: alb
   rules:
-    - host : "demo.2022-05-cncf-tag-o11y.nip.io"
+    - host : "demo.IP_ADDRESS_OF_THE_HIPSTERSHOP_ALB.nip.io"
       http:
         paths:
-          - pathType: ImplementationSpecific
-            path: "/"
+          - pathType: Prefix
+            path: /
             backend:
               service:
                 name: frontend
@@ -345,10 +325,6 @@ spec:
       labels:
         app: paymentservice
         product: hipster-shop
-      annotations:
-        metrics.dynatrace.com/path: /stats/prometheus
-        metrics.dynatrace.com/port: "15020"
-        metrics.dynatrace.com/scrape: "true"
     spec:
       terminationGracePeriodSeconds: 5
       containers:
@@ -405,15 +381,10 @@ spec:
       labels:
         app: productcatalogservice
         product: hipster-shop
-      annotations:
-        metrics.dynatrace.com/path: /stats/prometheus
-        metrics.dynatrace.com/port: "15020"
-        metrics.dynatrace.com/scrape: "true"
     spec:
       terminationGracePeriodSeconds: 5
       containers:
       - name: server
-        # image: registry.lab.dynatrace.org/cloudplatform/hipster-shop-productcatalogservice
         image: hrexed/productcatalogservice-otel:0.1
         imagePullPolicy: Always
         ports:
@@ -474,10 +445,6 @@ spec:
       labels:
         app: cartservice
         product: hipster-shop
-      annotations:
-        metrics.dynatrace.com/path: /stats/prometheus
-        metrics.dynatrace.com/port: "15020"
-        metrics.dynatrace.com/scrape: "true"
     spec:
       terminationGracePeriodSeconds: 5
       containers:
@@ -581,10 +548,6 @@ spec:
       labels:
         app: currencyservice
         product: hipster-shop
-      annotations:
-        metrics.dynatrace.com/path: /stats/prometheus
-        metrics.dynatrace.com/port: "15020"
-        metrics.dynatrace.com/scrape: "true"
     spec:
       terminationGracePeriodSeconds: 5
       containers:
@@ -648,10 +611,6 @@ spec:
       labels:
         app: shippingservice
         product: hipster-shop
-      annotations:
-        metrics.dynatrace.com/path: /stats/prometheus
-        metrics.dynatrace.com/port: "15020"
-        metrics.dynatrace.com/scrape: "true"
     spec:
       containers:
       - name: server
@@ -719,9 +678,6 @@ spec:
       annotations: # here we annotate the deployment to be scraped by dynatrace
         prometheus.io/port: '9121'
         prometheus.io/scrape: 'true'
-        metrics.dynatrace.com/path: /stats/prometheus
-        metrics.dynatrace.com/port: "15020"
-        metrics.dynatrace.com/scrape: "true"
     spec:
       containers:
       - name: redis

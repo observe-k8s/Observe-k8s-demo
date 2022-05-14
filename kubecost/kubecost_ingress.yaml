@@ -17,7 +17,7 @@ metadata:
 spec:
   ingressClassName: alb
   rules:
-  - host: kubecost.2022-05-cncf-tag-o11y.nip.io
+  - host: kubecost.IP_ADDRESS_OF_THE_KUBECOST_ALB.nip.io
     http:
       paths:
       - backend:
@@ -26,5 +26,5 @@ spec:
             port:
               name: tcp-frontend
         path: /
-        pathType: ImplementationSpecific
+        pathType: Prefix
 

@@ -8,11 +8,11 @@ metadata:
 spec:
   ingressClassName: alb
   rules:
-    - host: "grafana.2022-05-cncf-tag-o11y.nip.io"
+    - host: "grafana.IP_ADDRESS_OF_GRAFANA_ALB.nip.io"
       http:
         paths:
-          - pathType: ImplementationSpecific
-            path: "/"
+          - pathType: Prefix
+            path: /
             backend:
               service:
                 name: prometheus-grafana
