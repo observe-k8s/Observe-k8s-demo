@@ -97,7 +97,9 @@ helm install prometheus prometheus-community/kube-prometheus-stack \
      --set sidecar.datasources.enabled=true \
      --set sidecar.datasources.label=grafana_datasource \
      --set sidecar.datasources.labelValue="1" \
-     --set sidecar.dashboards.enabled=true
+     --set sidecar.dashboards.enabled=true \
+     --set grafana.grafana\.ini.auth.anonymous.enabled=true \
+     --set grafana.grafana\.ini.auth\.anonymous.org_role=Viewer 
 ```
 
 To measure the impact of our experiments on the traffic, we use the load testing
