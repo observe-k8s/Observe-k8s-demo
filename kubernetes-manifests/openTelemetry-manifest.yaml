@@ -40,17 +40,19 @@ spec:
     exporters:
       logging:
       otlp:
-        endpoint:  TEMPO_SERVICE_TOREPLACE.tempo.svc:4317
+        endpoint: TEMPO_TO_REPLACE.tempo.svc:4317
+        tls:
+          insecure: true
       prometheus:
-        endpoint: "PROM_SERVICE_TOREPLACE.default.svc:9090"
-        namespace: "default"
+        endpoint: "0.0.0.0:9090"
+        namespace: default
     service:
       pipelines:
         traces:
           receivers: [otlp,zipkin]
           processors: []
-          exporters: [logging,otlphttp]
+          exporters: [logging,otlp]
         metrics:
-          receivers: [prometheus]
+          receivers: [otlp]
           processors: [metricstransform,batch]
-          exporters: [logging,dynatrace]
+          exporters: [logging,prometheus]

@@ -292,4 +292,3 @@ kubectl -n hipster-shop apply -f kubernetes-manifests/k8s-manifest.yaml
 kubectl apply -f kubernetes-manifests/openTelemetry-manifest.yaml
 ```
 
-
