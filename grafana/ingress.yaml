@@ -3,17 +3,18 @@ kind: Ingress
 metadata:
   name: grafana-ingress
   annotations:
-    kubernetes.io/ingress.class: nginx
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
 spec:
+  ingressClassName: alb
   rules:
-    - host : "grafana.IP_TO_REPLACE.nip.io"
+    - host: "grafana.IP_ADDRESS_OF_GRAFANA_ALB.nip.io"
       http:
         paths:
-          - pathType: ImplementationSpecific
-            path: "/"
+          - pathType: Prefix
+            path: /
             backend:
               service:
                 name: prometheus-grafana
                 port:
                   number: 80
-

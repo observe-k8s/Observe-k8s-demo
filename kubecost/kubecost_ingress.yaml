@@ -2,7 +2,8 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   annotations:
-    kubernetes.io/ingress.class: nginx
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
     meta.helm.sh/release-name: kubecost
     meta.helm.sh/release-namespace: kubecost
   labels:
@@ -14,8 +15,9 @@ metadata:
   name: kubecost-cost-analyzer
   namespace: kubecost
 spec:
+  ingressClassName: alb
   rules:
-  - host: kubecost.IP_TO_REPLACE.nip.io
+  - host: kubecost.IP_ADDRESS_OF_THE_KUBECOST_ALB.nip.io
     http:
       paths:
       - backend:
@@ -24,5 +26,5 @@ spec:
             port:
               name: tcp-frontend
         path: /
-        pathType: ImplementationSpecific
+        pathType: Prefix
 
