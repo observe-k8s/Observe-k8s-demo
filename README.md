@@ -17,11 +17,105 @@ The Google HipsterShop is a microservice architecture using several langages :
 * C#
 * Java
 
-## Screenshots
+# Documentation
 
-| Home Page                                                                                                         | Checkout Screen                                                                                                    |
-| ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| [![Screenshot of store homepage](./docs/img/online-boutique-frontend-1.png)](./docs/img/online-boutique-frontend-1.png) | [![Screenshot of checkout screen](./docs/img/online-boutique-frontend-2.png)](./docs/img/online-boutique-frontend-2.png) |
+- [Demo Screenshots](./docs/demo_screenshots.md)
+- [Feature Flags](./docs/feature_flags.md)
+- [Manual Span Attributes](./docs/manual_span_attributes.md)
+- [Metric Feature Coverage by Service](./docs/metric_service_features.md)
+- [Requirements](./docs/requirements/README.md)
+- [Service Roles](./docs/service_table.md)
+- [Trace Feature Coverage by Service](./docs/trace_service_features.md)
+
+## Architecture
+
+**Online Boutique** is composed of microservices written in different programming
+languages that talk to each other over gRPC and HTTP; and a load generator which
+uses [Locust](https://locust.io/) to fake user traffic.
+
+```mermaid
+graph TD
+
+subgraph Service Diagram
+adservice(Ad Service):::java
+cache[(Cache<br/>&#40redis&#41)]
+cartservice(Cart Service):::dotnet
+checkoutservice(Checkout Service):::golang
+currencyservice(Currency Service):::cpp
+emailservice(Email Service):::ruby
+frontend(Frontend):::javascript
+loadgenerator([Load Generator]):::python
+paymentservice(Payment Service):::javascript
+productcatalogservice(ProductCatalog Service):::golang
+quoteservice(Quote Service):::php
+recommendationservice(Recommendation Service):::python
+shippingservice(Shipping Service):::rust
+featureflagservice(Feature Flag Service):::erlang
+featureflagstore[(Feature Flag Store<br/>&#40PostgreSQL DB&#41)]
+
+Internet -->|HTTP| frontend
+loadgenerator -->|HTTP| frontend
+
+checkoutservice --> cartservice --> cache
+checkoutservice --> productcatalogservice
+checkoutservice --> currencyservice
+checkoutservice -->|HTTP| emailservice
+checkoutservice --> paymentservice
+checkoutservice --> shippingservice
+
+frontend --> adservice
+frontend --> cartservice
+frontend --> productcatalogservice
+frontend --> checkoutservice
+frontend --> currencyservice
+frontend --> recommendationservice --> productcatalogservice
+frontend --> shippingservice -->|HTTP| quoteservice
+
+productcatalogservice --> |evalFlag| featureflagservice
+
+shippingservice --> |evalFlag| featureflagservice
+
+featureflagservice --> featureflagstore
+
+end
+classDef java fill:#b07219,color:white;
+classDef dotnet fill:#178600,color:white;
+classDef golang fill:#00add8,color:black;
+classDef cpp fill:#f34b7d,color:white;
+classDef ruby fill:#701516,color:white;
+classDef python fill:#3572A5,color:white;
+classDef javascript fill:#f1e05a,color:black;
+classDef rust fill:#dea584,color:black;
+classDef erlang fill:#b83998,color:white;
+classDef php fill:#4f5d95,color:white;
+```
+
+```mermaid
+graph TD
+subgraph Service Legend
+  javasvc(Java):::java
+  dotnetsvc(.NET):::dotnet
+  golangsvc(Go):::golang
+  cppsvc(C++):::cpp
+  rubysvc(Ruby):::ruby
+  pythonsvc(Python):::python
+  javascriptsvc(JavaScript):::javascript
+  rustsvc(Rust):::rust
+  erlangsvc(Erlang/Elixir):::erlang
+  phpsvc(PHP):::php
+end
+
+classDef java fill:#b07219,color:white;
+classDef dotnet fill:#178600,color:white;
+classDef golang fill:#00add8,color:black;
+classDef cpp fill:#f34b7d,color:white;
+classDef ruby fill:#701516,color:white;
+classDef python fill:#3572A5,color:white;
+classDef javascript fill:#f1e05a,color:black;
+classDef rust fill:#dea584,color:black;
+classDef erlang fill:#b83998,color:white;
+classDef php fill:#4f5d95,color:white;
+```
 
 
 ## Prerequisite
@@ -51,32 +145,6 @@ make run
 
 * [Deployment Steps in GCP](https://github.com/observe-k8s/Observe-k8s-demo/tree/gke)
 * [Deployment Steps in EKS](https://github.com/observe-k8s/Observe-k8s-demo/tree/eks)
-
-
-## Architecture
-
-**Online Boutique** is composed of 11 microservices written in different
-languages that talk to each other over gRPC. See the [Development Principles](/docs/development-principles.md) doc for more information.
-
-[![Architecture of
-microservices](./docs/img/architecture-diagram.png)](./docs/img/architecture-diagram.png)
-
-Find **Protocol Buffers Descriptions** at the [`./pb` directory](./pb).
-
-| Service                                              | Language      | Description                                                                                                                       |
-| ---------------------------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| [frontend](./src/frontend)                           | Go            | Exposes an HTTP server to serve the website. Does not require signup/login and generates session IDs for all users automatically. |
-| [cartservice](./src/cartservice)                     | C#            | Stores the items in the user's shopping cart in Redis and retrieves it.                                                           |
-| [productcatalogservice](./src/productcatalogservice) | Go            | Provides the list of products from a JSON file and ability to search products and get individual products.                        |
-| [currencyservice](./src/currencyservice)             | Node.js       | Converts one money amount to another currency. Uses real values fetched from European Central Bank. It's the highest QPS service. |
-| [paymentservice](./src/paymentservice)               | Node.js       | Charges the given credit card info (mock) with the given amount and returns a transaction ID.                                     |
-| [shippingservice](./src/shippingservice)             | Go            | Gives shipping cost estimates based on the shopping cart. Ships items to the given address (mock)                                 |
-| [emailservice](./src/emailservice)                   | Python        | Sends users an order confirmation email (mock).                                                                                   |
-| [checkoutservice](./src/checkoutservice)             | Go            | Retrieves user cart, prepares order and orchestrates the payment, shipping and the email notification.                            |
-| [recommendationservice](./src/recommendationservice) | Python        | Recommends other products based on what's given in the cart.                                                                      |
-| [adservice](./src/adservice)                         | Java          | Provides text ads based on given context words.                                                                                   |
-| [loadgenerator](./src/loadgenerator)                 | JS    /K6     | Continuously sends requests imitating realistic user shopping flows to the frontend.                                              |
-
 
 
 

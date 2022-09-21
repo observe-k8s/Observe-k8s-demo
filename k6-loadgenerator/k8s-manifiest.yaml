@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k6loadgenerator
+spec:
+  selector:
+    matchLabels:
+      app: loadgenerator
+      product: k6
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: loadgenerator
+        product: k6
+      annotations:
+        sidecar.istio.io/rewriteAppHTTPProbers: "true"
+    spec:
+      terminationGracePeriodSeconds: 5
+      restartPolicy: Always
+      containers:
+        - name: k6load
+          image: hrexed/k6-prometheus-otlp:0.1
+            imagePullPolicy: Always
+            args: [ "-u", "30", "-d", "24h" ]
+            env:
+              - name: FRONTEND_ADDR
+                value: "onlineboutique.IP_TO_REPLACE.nip.io"
+              - name: K6_PROMETHEUS_REMOTE_URL
+                value: http://prometheus-kube-prometheus-prometheus.default.svc.cluster.local:9090/api/v1/write
+              - name: OTLP_SERVICE_ADDR
+                value: "otel-collector.default.svc.cluster.local:4317"
+          resources:
+            requests:
+              cpu: 300m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      nodeSelector:
+        node-type: observability

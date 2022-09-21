@@ -1,0 +1,63 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: Workflow
+metadata:
+  namespace: hipster-shop
+  name: flowchaos
+spec:
+  entry: entry
+  templates:
+    - name: entry
+      templateType: Serial
+      deadline: 20m
+      children:
+        - memorystress
+        - podfailure
+        - latency
+    - name: memorystress
+      templateType: StressChaos
+      deadline: 10m
+      stressChaos:
+        selector:
+          namespaces:
+            - hipster-shop
+        mode: all
+        stressors:
+          memory:
+            workers: 2
+            size: 30%
+    - name: podfailure
+      templateType: PodChaos
+      deadline: 5m
+      podChaos:
+        selector:
+          namespaces:
+            - hipster-shop
+          labelSelectors:
+            app.kubernetes.io/name: otel-demo
+        mode: random-max-percent
+        value: '30'
+        action: pod-failure
+        gracePeriod: 0
+    - name: latency
+      templateType: NetworkChaos
+      deadline: 5m
+      networkChaos:
+        selector:
+          namespaces:
+            - hipster-shop
+        mode: random-max-percent
+        value: '15'
+        action: delay
+        delay:
+          latency: 15ms
+          correlation: '0'
+          jitter: 0ms
+        direction: to
+        target:
+          selector:
+            namespaces:
+              - hipster-shop
+            labelSelectors:
+              app.kubernetes.io/name: otel-demo
+          mode: random-max-percent
+          value: '30'

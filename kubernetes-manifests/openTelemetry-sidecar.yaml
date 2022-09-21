@@ -1,0 +1,65 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel-sidecar
+spec:
+  mode: sidecar
+  hostNetwork: true
+  env:
+    - name: K8S_NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+  image: otel/opentelemetry-collector-contrib-dev:latest
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    processors:
+      batch:
+        send_batch_max_size: 1000
+        timeout: 30s
+        send_batch_size : 800
+
+      memory_limiter:
+         check_interval: 1s
+         limit_percentage: 70
+         spike_limit_percentage: 30
+
+      metricstransform:
+        transforms:
+           include: .+
+           match_type: regexp
+           action: update
+           operations:
+             - action: add_label
+               new_label:  k8s.cluster.name
+               new_value: observek8s
+             - action: add_label
+               new_label: dt.kubernetes.config.id
+               new_value: CLUSTER_ID_TOREPLACE
+             - action: update_label
+               label: system_uuid
+               new_label: dt.kubernetes.node.system_uuid
+
+    exporters:
+      logging:
+        loglevel: debug
+
+      otlp:
+        endpoint: oteld-collector.default.svc.cluster.local:4317
+        tls:
+          insecure: true
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter,batch]
+          exporters: [otlp,logging]
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter,metricstransform,batch]
+          exporters: [otlp]

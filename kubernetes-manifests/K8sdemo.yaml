@@ -1,0 +1,1166 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: emailservice
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otel-demo
+      app.kubernetes.io/instance: otel-demo-emailservice
+      app.kubernetes.io/component: emailservice
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: otel-demo
+        app.kubernetes.io/instance: otel-demo-emailservice
+        app.kubernetes.io/component: emailservice
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: emailservice
+          image: otel/demo:v0.3.4-alpha-emailservice
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: APP_ENV
+              value: "production"
+            - name: EMAIL_SERVICE_PORT
+              value: '8080'
+            - name: OTEL_SERVICE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: 'metadata.labels[''app.kubernetes.io/component'']'
+            - name: OTEL_K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: OTEL_K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: OTEL_K8S_POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.name=$(OTEL_SERVICE_NAME),k8s.namespace.name=$(OTEL_K8S_NAMESPACE),k8s.node.name=$(OTEL_K8S_NODE_NAME),k8s.pod.name=$(OTEL_K8S_POD_NAME)
+            - name : OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://localhost:4318"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: emailservice
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: otel-demo
+    app.kubernetes.io/instance: otel-demo-emailservice
+    app.kubernetes.io/component: emailservice
+  ports:
+    - name: grpc
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkoutservice
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otel-demo
+      app.kubernetes.io/instance: otel-demo-checkoutservice
+      app.kubernetes.io/component: checkoutservice
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: otel-demo
+        app.kubernetes.io/instance: otel-demo-checkoutservice
+        app.kubernetes.io/component: checkoutservice
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+    spec:
+      containers:
+        - name: checkoutservice
+          image: otel/demo:v0.3.4-alpha-checkoutservice
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: CHECKOUT_SERVICE_PORT
+              value: '8080'
+            - name: OTEL_SERVICE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: 'metadata.labels[''app.kubernetes.io/component'']'
+            - name: OTEL_K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: OTEL_K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: OTEL_K8S_POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.name=$(OTEL_SERVICE_NAME),k8s.namespace.name=$(OTEL_K8S_NAMESPACE),k8s.node.name=$(OTEL_K8S_NODE_NAME),k8s.pod.name=$(OTEL_K8S_POD_NAME)
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://localhost:4317"
+            - name: PRODUCT_CATALOG_SERVICE_ADDR
+              value: "productcatalogservice:8080"
+            - name: SHIPPING_SERVICE_ADDR
+              value: "shippingservice:8080"
+            - name: PAYMENT_SERVICE_ADDR
+              value: "paymentservice:8080"
+            - name: EMAIL_SERVICE_ADDR
+              value: "http://emailservice:8080"
+            - name: CURRENCY_SERVICE_ADDR
+              value: "currencyservice:8080"
+            - name: CART_SERVICE_ADDR
+              value: "cartservice:8080"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: checkoutservice
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: otel-demo
+    app.kubernetes.io/instance: otel-demo-checkoutservice
+    app.kubernetes.io/component: checkoutservice
+  ports:
+    - name: grpc
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recommendationservice
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otel-demo
+      app.kubernetes.io/instance: otel-demo-recommendationservice
+      app.kubernetes.io/component: recommendationservice
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: otel-demo
+        app.kubernetes.io/instance: otel-demo-recommendationservice
+        app.kubernetes.io/component: recommendationservice
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: recommendationservice
+          image: otel/demo:v0.3.4-alpha-recommendationservice
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: OTEL_PYTHON_LOG_CORRELATION
+              value: 'true'
+            - name: PRODUCT_CATALOG_SERVICE_ADDR
+              value: "productcatalogservice:8080"
+            - name: RECOMMENDATION_SERVICE_PORT
+              value: '8080'
+            - name: OTEL_SERVICE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: 'metadata.labels[''app.kubernetes.io/component'']'
+            - name: OTEL_K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: OTEL_K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: OTEL_K8S_POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.name=$(OTEL_SERVICE_NAME),k8s.namespace.name=$(OTEL_K8S_NAMESPACE),k8s.node.name=$(OTEL_K8S_NODE_NAME),k8s.pod.name=$(OTEL_K8S_POD_NAME)
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://localhost:4317"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 220Mi
+            limits:
+              cpu: 200m
+              memory: 450Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: recommendationservice
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: otel-demo
+    app.kubernetes.io/instance: otel-demo-recommendationservice
+    app.kubernetes.io/component: recommendationservice
+  ports:
+    - name: grpc
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otel-demo
+      app.kubernetes.io/instance: otel-demo-frontend
+      app.kubernetes.io/component: frontend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: otel-demo
+        app.kubernetes.io/instance: otel-demo-frontend
+        app.kubernetes.io/component: frontend
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+    spec:
+      containers:
+        - name: frontend
+          # both look good
+          #image: registry.lab.dynatrace.org/cloudplatform/hipster-shop-frontend
+          image: otel/demo:v0.3.4-alpha-frontend
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: OTEL_SERVICE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: 'metadata.labels[''app.kubernetes.io/component'']'
+            - name: OTEL_K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: OTEL_K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: OTEL_K8S_POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.name=$(OTEL_SERVICE_NAME),k8s.namespace.name=$(OTEL_K8S_NAMESPACE),k8s.node.name=$(OTEL_K8S_NODE_NAME),k8s.pod.name=$(OTEL_K8S_POD_NAME)
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://localhost:4317"
+            - name: FRONTEND_ADDR
+              value: :8080
+            - name: PRODUCT_CATALOG_SERVICE_ADDR
+              value: "productcatalogservice:8080"
+            - name: CURRENCY_SERVICE_ADDR
+              value: "currencyservice:8080"
+            - name: CART_SERVICE_ADDR
+              value: "cartservice:8080"
+            - name: RECOMMENDATION_SERVICE_ADDR
+              value: "recommendationservice:8080"
+            - name: SHIPPING_SERVICE_ADDR
+              value: "shippingservice:8080"
+            - name: CHECKOUT_SERVICE_ADDR
+              value: "checkoutservice:8080"
+            - name: AD_SERVICE_ADDR
+              value: "adservice:8080"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: otel-demo
+    app.kubernetes.io/instance: otel-demo-frontend
+    app.kubernetes.io/component: frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: onlineboutique-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host :  "demo.IP_TO_REPLACE.nip.io"
+      http:
+        paths:
+          - pathType: ImplementationSpecific
+            path: "/"
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+---
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paymentservice
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otel-demo
+      app.kubernetes.io/instance: otel-demo-paymentservice
+      app.kubernetes.io/component: paymentservice
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: otel-demo
+        app.kubernetes.io/instance: otel-demo-paymentservice
+        app.kubernetes.io/component: paymentservice
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: paymentservice
+          image: otel/demo:v0.3.4-alpha-paymentservice
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: OTEL_SERVICE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: 'metadata.labels[''app.kubernetes.io/component'']'
+            - name: OTEL_K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: OTEL_K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: OTEL_K8S_POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.name=$(OTEL_SERVICE_NAME),k8s.namespace.name=$(OTEL_K8S_NAMESPACE),k8s.node.name=$(OTEL_K8S_NODE_NAME),k8s.pod.name=$(OTEL_K8S_POD_NAME)
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://localhost:4317"
+            - name: PAYMENT_SERVICE_PORT
+              value: "8080"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: paymentservice
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: otel-demo
+    app.kubernetes.io/instance: otel-demo-paymentservice
+    app.kubernetes.io/component: paymentservice
+  ports:
+    - name: grpc
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: productcatalogservice
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otel-demo
+      app.kubernetes.io/instance: otel-demo-productcatalogservice
+      app.kubernetes.io/component: productcatalogservice
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: otel-demo
+        app.kubernetes.io/instance: otel-demo-productcatalogservice
+        app.kubernetes.io/component: productcatalogservice
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: productcatalogservice
+          # image: registry.lab.dynatrace.org/cloudplatform/hipster-shop-productcatalogservice
+          image: otel/demo:v0.3.4-alpha-productcatalogservice
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PRODUCT_CATALOG_SERVICE_PORT
+              value: "8080"
+            - name: OTEL_SERVICE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: 'metadata.labels[''app.kubernetes.io/component'']'
+            - name: OTEL_K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: OTEL_K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: OTEL_K8S_POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.name=$(OTEL_SERVICE_NAME),k8s.namespace.name=$(OTEL_K8S_NAMESPACE),k8s.node.name=$(OTEL_K8S_NODE_NAME),k8s.pod.name=$(OTEL_K8S_POD_NAME)
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://localhost:4317"
+            - name: FEATURE_FLAG_GRPC_SERVICE_ADDR
+              value: "featureflagservice:50053"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: productcatalogservice
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: otel-demo
+    app.kubernetes.io/instance: otel-demo-productcatalogservice
+    app.kubernetes.io/component: productcatalogservice
+  ports:
+    - name: grpc
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cartservice
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otel-demo
+      app.kubernetes.io/instance: otel-demo-cartservice
+      app.kubernetes.io/component: cartservice
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: otel-demo
+        app.kubernetes.io/instance: otel-demo-cartservice
+        app.kubernetes.io/component: cartservice
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: cartservice
+          image: otel/demo:v0.3.4-alpha-cartservice
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_URLS
+              value: http://*:8080
+            - name: REDIS_ADDR
+              value: "redis:6379"
+            - name: PORT
+              value: "8080"
+            - name: OTEL_SERVICE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: 'metadata.labels[''app.kubernetes.io/component'']'
+            - name: OTEL_K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: OTEL_K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: OTEL_K8S_POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.name=$(OTEL_SERVICE_NAME),k8s.namespace.name=$(OTEL_K8S_NAMESPACE),k8s.node.name=$(OTEL_K8S_NODE_NAME),k8s.pod.name=$(OTEL_K8S_POD_NAME)
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://localhost:4317"
+          resources:
+            requests:
+              cpu: 200m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 512Mi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cartservice
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: otel-demo
+    app.kubernetes.io/instance: otel-demo-cartservice
+    app.kubernetes.io/component: cartservice
+  ports:
+    - name: grpc
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loadgeneratorservice
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otel-demo
+      app.kubernetes.io/instance: otel-demo-loadgeneratorservice
+      app.kubernetes.io/component: loadgeneratorservice
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: otel-demo
+        app.kubernetes.io/instance: otel-demo-loadgeneratorservice
+        app.kubernetes.io/component: loadgeneratorservice
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: loadgeneratorservice
+          image: otel/demo:v0.3.4-alpha-loadgenerator
+          imagePullPolicy: Always
+          ports:
+            - name: locust
+              containerPort: 8089
+          env:
+            - name: OTEL_SERVICE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: 'metadata.labels[''app.kubernetes.io/component'']'
+            - name: OTEL_K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: OTEL_K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: OTEL_K8S_POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.name=$(OTEL_SERVICE_NAME),k8s.namespace.name=$(OTEL_K8S_NAMESPACE),k8s.node.name=$(OTEL_K8S_NODE_NAME),k8s.pod.name=$(OTEL_K8S_POD_NAME)
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://localhost:4317"
+            - name: LOCUST_WEB_PORT
+              value: '8089'
+            - name: LOCUST_USERS
+              value: '10'
+            - name: LOCUST_HOST
+              value: http://frontend
+            - name: LOCUST_HEADLESS
+              value: 'false'
+            - name: LOCUST_AUTOSTART
+              value: 'true'
+            - name: PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION
+              value: "python"
+            - name: FRONTEND_ADDR
+              value: "frontend"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: loadgeneratorservice
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: otel-demo
+    app.kubernetes.io/instance: otel-demo-loadgeneratorservice
+    app.kubernetes.io/component: loadgeneratorservice
+  ports:
+    - name: locust
+      port: 8089
+      targetPort: 8089
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: currencyservice
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otel-demo
+      app.kubernetes.io/instance: otel-demo-currencyservice
+      app.kubernetes.io/component: currencyservice
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: otel-demo
+        app.kubernetes.io/instance: otel-demo-currencyservice
+        app.kubernetes.io/component: currencyservice
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: currencyservice
+          image: otel/demo:v0.3.4-alpha-currencyservice
+          imagePullPolicy: Always
+          ports:
+            - name: grpc
+              containerPort: 8080
+          env:
+            - name: CURRENCY_SERVICE_PORT
+              value: '8080'
+            - name: OTEL_SERVICE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: 'metadata.labels[''app.kubernetes.io/component'']'
+            - name: OTEL_K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: OTEL_K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: OTEL_K8S_POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.name=$(OTEL_SERVICE_NAME),k8s.namespace.name=$(OTEL_K8S_NAMESPACE),k8s.node.name=$(OTEL_K8S_NODE_NAME),k8s.pod.name=$(OTEL_K8S_POD_NAME)
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://localhost:4317"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: currencyservice
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: otel-demo
+    app.kubernetes.io/instance: otel-demo-currencyservice
+    app.kubernetes.io/component: currencyservice
+  ports:
+    - name: grpc
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shippingservice
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otel-demo
+      app.kubernetes.io/instance: otel-demo-shippingservice
+      app.kubernetes.io/component: shippingservice
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: otel-demo
+        app.kubernetes.io/instance: otel-demo-shippingservice
+        app.kubernetes.io/component: shippingservice
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+    spec:
+      containers:
+        - name: shippingservice
+          image: otel/demo:v0.3.4-alpha-shippingservice
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SHIPPING_SERVICE_PORT
+              value: '8080'
+            - name: OTEL_SERVICE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: 'metadata.labels[''app.kubernetes.io/component'']'
+            - name: OTEL_K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: OTEL_K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: OTEL_K8S_POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.name=$(OTEL_SERVICE_NAME),k8s.namespace.name=$(OTEL_K8S_NAMESPACE),k8s.node.name=$(OTEL_K8S_NODE_NAME),k8s.pod.name=$(OTEL_K8S_POD_NAME)
+            - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+              value: "http://localhost:4317"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shippingservice
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: otel-demo
+    app.kubernetes.io/instance: otel-demo-shippingservice
+    app.kubernetes.io/component: shippingservice
+  ports:
+    - name: grpc
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otel-demo
+      app.kubernetes.io/instance: otel-demo-redis
+      app.kubernetes.io/component: redis
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: otel-demo
+        app.kubernetes.io/instance: otel-demo-redis
+        app.kubernetes.io/component: redis
+      annotations: # here we annotate the deployment to be scraped by dynatrace
+        prometheus.io/port: '9121'
+        prometheus.io/scrape: 'true'
+        sidecar.opentelemetry.io/inject: "true"
+    spec:
+      containers:
+        - name: redis
+          image: redis:alpine
+          ports:
+            - containerPort: 6379
+          env:
+            - name: PORT
+              value: '8080'
+            - name: OTEL_SERVICE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: 'metadata.labels[''app.kubernetes.io/component'']'
+            - name: OTEL_K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: OTEL_K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: OTEL_K8S_POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.name=$(OTEL_SERVICE_NAME),k8s.namespace.name=$(OTEL_K8S_NAMESPACE),k8s.node.name=$(OTEL_K8S_NODE_NAME),k8s.pod.name=$(OTEL_K8S_POD_NAME)
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://localhost:4317"
+          readinessProbe:
+            periodSeconds: 5
+            tcpSocket:
+              port: 6379
+          livenessProbe:
+            periodSeconds: 5
+            tcpSocket:
+              port: 6379
+          volumeMounts:
+            - mountPath: /data
+              name: redis-data
+          resources:
+            limits:
+              memory: 256Mi
+              cpu: 125m
+            requests:
+              cpu: 70m
+              memory: 200Mi
+      volumes:
+        - name: redis-data
+          emptyDir: { }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: otel-demo
+    app.kubernetes.io/instance: otel-demo-redis
+    app.kubernetes.io/component: redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: adservice
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otel-demo
+      app.kubernetes.io/instance: otel-demo-adservice
+      app.kubernetes.io/component: adservice
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: otel-demo
+        app.kubernetes.io/instance: otel-demo-adservice
+        app.kubernetes.io/component: adservice
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: adservice
+          image: otel/demo:v0.3.4-alpha-adservice
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: AD_SERVICE_PORT
+              value: "8080"
+            - name: OTEL_SERVICE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: 'metadata.labels[''app.kubernetes.io/component'']'
+            - name: OTEL_K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: OTEL_K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: OTEL_K8S_POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.name=$(OTEL_SERVICE_NAME),k8s.namespace.name=$(OTEL_K8S_NAMESPACE),k8s.node.name=$(OTEL_K8S_NODE_NAME),k8s.pod.name=$(OTEL_K8S_POD_NAME)
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://localhost:4317"
+          resources:
+            requests:
+              cpu: 200m
+              memory: 180Mi
+            limits:
+              cpu: 300m
+              memory: 300Mi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: adservice
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: otel-demo
+    app.kubernetes.io/instance: otel-demo-adservice
+    app.kubernetes.io/component: adservice
+  ports:
+    - name: grpc
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: featureflagservice
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otel-demo
+      app.kubernetes.io/instance: otel-demo-featureflagservice
+      app.kubernetes.io/component: featureflagservice
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: otel-demo
+        app.kubernetes.io/instance: otel-demo-featureflagservice
+        app.kubernetes.io/component: featureflagservice
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: featureflagservice
+          image: otel/demo:v0.3.4-alpha-featureflagservice
+          imagePullPolicy: Always
+          ports:
+            - name: grpc
+              containerPort: 50053
+            - name: http
+              containerPort: 8081
+          env:
+            - name: FEATURE_FLAG_GRPC_SERVICE_PORT
+              value: '50053'
+            - name: FEATURE_FLAG_SERVICE_PORT
+              value: '8081'
+            - name: DATABASE_URL
+              value: "ecto://ffs:ffs@ffspostgres:5432/ffs"
+            - name: OTEL_SERVICE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: 'metadata.labels[''app.kubernetes.io/component'']'
+            - name: OTEL_K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: OTEL_K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: OTEL_K8S_POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.name=$(OTEL_SERVICE_NAME),k8s.namespace.name=$(OTEL_K8S_NAMESPACE),k8s.node.name=$(OTEL_K8S_NODE_NAME),k8s.pod.name=$(OTEL_K8S_POD_NAME)
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://localhost:4318"
+          resources:
+            requests:
+              cpu: 200m
+              memory: 180Mi
+            limits:
+              cpu: 300m
+              memory: 300Mi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: featureflagservice
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: otel-demo
+    app.kubernetes.io/instance: otel-demo-featureflagservice
+    app.kubernetes.io/component: featureflagservice
+  ports:
+    - name: grpc
+      port: 50053
+      targetPort: 50053
+    - name: http
+      port: 8081
+      targetPort: 8081
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ffspostgres
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otel-demo
+      app.kubernetes.io/instance: otel-demo-ffsPostgres
+      app.kubernetes.io/component: ffspostgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: otel-demo
+        app.kubernetes.io/instance: otel-demo-ffsPostgres
+        app.kubernetes.io/component: ffspostgres
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: ffspostgres
+          image: cimg/postgres:14.2
+          imagePullPolicy: Always
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: ffs
+            - name: POSTGRES_PASSWORD
+              value: ffs
+            - name: POSTGRES_USER
+              value: ffs
+            - name: OTEL_SERVICE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: 'metadata.labels[''app.kubernetes.io/component'']'
+            - name: OTEL_K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: OTEL_K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: OTEL_K8S_POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.name=$(OTEL_SERVICE_NAME),k8s.namespace.name=$(OTEL_K8S_NAMESPACE),k8s.node.name=$(OTEL_K8S_NODE_NAME),k8s.pod.name=$(OTEL_K8S_POD_NAME)
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://localhost:4317"
+          resources:
+            requests:
+              cpu: 200m
+              memory: 180Mi
+            limits:
+              cpu: 300m
+              memory: 300Mi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ffspostgres
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: otel-demo
+    app.kubernetes.io/instance: otel-demo-ffsPostgres
+    app.kubernetes.io/component: ffspostgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---

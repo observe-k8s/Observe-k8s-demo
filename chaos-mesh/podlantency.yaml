@@ -1,0 +1,23 @@
+kind: Schedule
+apiVersion: chaos-mesh.org/v1alpha1
+metadata:
+  namespace: hipster-shop
+  name: podlantency
+spec:
+  schedule: 10 * * * *
+  startingDeadlineSeconds: 50
+  concurrencyPolicy: Allow
+  historyLimit: 1
+  type: NetworkChaos
+  networkChaos:
+    selector:
+      namespaces:
+        - hipster-shop
+      labelSelectors:
+        app.kubernetes.io/name: otel-demo
+    mode: all
+    action: delay
+    duration: 25m
+    delay:
+      latency: 25ms
+    direction: to

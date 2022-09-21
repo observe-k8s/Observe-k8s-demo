@@ -5,6 +5,7 @@ metadata:
 spec:
   mode: daemonset
   hostNetwork: true
+  serviceAccount: otelcontribcol
   image: otel/opentelemetry-collector-contrib:0.46.0
   config: |
     receivers:
@@ -14,35 +15,45 @@ spec:
           http:
       zipkin:
         endpoint: 0.0.0.0:9411
+      otlp/spanmetrics:
+        protocols:
+          grpc:
+            endpoint: "localhost:65535"
     processors:
       batch:
         send_batch_max_size: 1000
         timeout: 30s
         send_batch_size : 800
-      metricstransform:
-        transforms:
-           include: .+
-           match_type: regexp
-           action: update
-           operations:
-             - action: update_label
-               label: namespace
-               new_label: k8s.namespace.name
-             - action: add_label
-               new_label: dt.kubernetes.config.id
-               new_value: CLUSTER_ID_TOREPLACE
-             - action: update_label
-               label: uid
-               new_label: k8s.pod.uid
-             - action: update_label
-               label: system_uuid
-               new_label: dt.kubernetes.node.system_uuid
+
+      spanmetrics:
+        metrics_exporter: prometheus
+
+      memory_limiter:
+        check_interval: 1s
+        limit_percentage: 70
+        spike_limit_percentage: 30
+
+      k8sattributes:
+        auth_type: serviceAccount
+        passthrough: false
+        filter:
+          node_from_env_var: K8S_NODE_NAME
+        extract:
+          metadata:
+            - k8s.pod.name
+            - k8s.pod.uid
+            - k8s.deployment.name
+            - k8s.namespace.name
+            - k8s.node.name
+            - k8s.pod.start_time
+
     exporters:
       logging:
       otlp:
         endpoint: TEMPO_TO_REPLACE.tempo.svc:4317
         tls:
           insecure: true
+
       prometheus:
         endpoint: "0.0.0.0:9090"
         namespace: default
@@ -50,9 +61,12 @@ spec:
       pipelines:
         traces:
           receivers: [otlp,zipkin]
-          processors: []
-          exporters: [logging,otlp]
+          processors: [memory_limiter,k8sattributes,batch]
+          exporters: [otlp]
         metrics:
           receivers: [otlp]
-          processors: [metricstransform,batch]
-          exporters: [logging,prometheus]
+          processors: [memory_limiter,k8sattributes,batch]
+          exporters: [prometheus]
+        metrics/spanmetrics:
+          receivers: [otlp/spanmetrics]
+          exporters: [prometheus]

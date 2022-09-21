@@ -1,0 +1,24 @@
+kind: Schedule
+apiVersion: chaos-mesh.org/v1alpha1
+metadata:
+  namespace: hipster-shop
+  name: podmemorystress
+spec:
+  schedule: 9 * * * *
+  startingDeadlineSeconds: 60
+  concurrencyPolicy: Allow
+  historyLimit: 1
+  type: StressChaos
+  stressChaos:
+    selector:
+      namespaces:
+        - hipster-shop
+      labelSelectors:
+        app.kubernetes.io/name: otel-demo
+    mode: random-max-percent
+    value: '40'
+    stressors:
+      memory:
+        workers: 2
+        size: 30%
+    duration: 15m

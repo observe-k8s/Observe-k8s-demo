@@ -1,0 +1,24 @@
+kind: Schedule
+apiVersion: chaos-mesh.org/v1alpha1
+metadata:
+  namespace: hipster-shop
+  name: podfailure
+spec:
+  schedule: 5 * * * *
+  startingDeadlineSeconds: 50
+  concurrencyPolicy: Allow
+  historyLimit: 1
+  type: PodChaos
+  podChaos:
+    selector:
+      namespaces:
+        - hipster-shop
+      labelSelectors:
+        app.kubernetes.io/name: otel-demo
+      podPhaseSelectors:
+        - Running
+    mode: random-max-percent
+    value: '30'
+    action: pod-failure
+    duration: 20m
+    gracePeriod: 0

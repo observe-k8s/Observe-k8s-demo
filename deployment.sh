@@ -96,7 +96,7 @@ echo 'Found external IP: '$IP
 
 ### Update the ip of the ip adress for the ingres
 #TODO to update this part to use the dns entry /ELB/ALB
-sed -i "s,IP_TO_REPLACE,$IP," kubernetes-manifests/k8s-manifest.yaml
+sed -i "s,IP_TO_REPLACE,$IP," kubernetes-manifests/K8sdemo.yaml
 sed -i "s,IP_TO_REPLACE,$IP," grafana/ingress.yaml
 
 
@@ -135,13 +135,13 @@ kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releas
 # Deploying Tempo
 echo "Deploying Tempo"
 kubectl create ns tempo
-helm upgrade --install tempo grafana/tempo --namespace tempo
+helm upgrade --install tempo-distributed grafana/tempo --namespace tempo --set queryFrontend.query.enabled=true --set prometheusRule.enabled=true --set metricsGenerator.enabled=true --set memcached.enabled=true
 kubectl wait pod -l app.kubernetes.io/instance=tempo -n tempo --for=condition=Ready --timeout=2m
 TEMPO_SERICE_NAME=$(kubectl  get svc -l app.kubernetes.io/instance=tempo -n tempo -o jsonpath="{.items[0].metadata.name}")
 sed -i "s,TEMPO_SERIVCE_NAME,$TEMPO_SERICE_NAME," kubernetes-manifests/openTelemetry-manifest.yaml
 sed -i "s,PROM_SERVICE_TOREPLACE,$PROMETHEUS_SERVER," kubernetes-manifests/openTelemetry-manifest.yaml
 CLUSTERID=$(kubectl get namespace kube-system -o jsonpath='{.metadata.uid}')
-sed -i "s,CLUSTER_ID_TOREPLACE,$CLUSTERID," kubernetes-manifests/openTelemetry-manifest.yaml
+sed -i "s,CLUSTER_ID_TOREPLACE,$CLUSTERID," kubernetes-manifests/openTelemetry-sidecar.yaml
 
 #Deploying the fluent operator
 echo "Deploying FluentOperator"
@@ -190,25 +190,46 @@ sed -i "s,LOKI_TO_REPLACE,$LOKI_SERVICE," grafana/prometheus-datasource.yaml
 sed -i "s,TEMPO_TO_REPLACE,$TEMPO_SERICE_NAME," grafana/prometheus-datasource.yaml
 kubectl apply -f  grafana/prometheus-datasource.yaml
 
+#Deploy the OpenTelemetry Collector
+echo "Deploying Otel Collector"
+kubectl apply -f kubernetes-manifests/openTelemetry-manifest.yaml
+kubectl apply -f kubernetes-manifests/rbac.yaml
 
 #Deploy demo Application
 echo "Deploying Hipstershop"
 kubectl create ns hipster-shop
-kubectl apply -f kubernetes-manifests/k8s-manifest.yaml -n hipster-shop
+kubectl annotate ns hipster-shop chaos-mesh.org/inject=enabled
+kubectl apply -f kubernetes-manifests/openTelemetry-sidecar.yaml -n hipster-shop
+kubectl apply -f kubernetes-manifests/k8sdemo.yaml -n hipster-shop
 
-#Deploy the OpenTelemetry Collector
-echo "Deploying Otel Collector"
-kubectl apply -f kubernetes-manifests/openTelemetry-manifest.yaml
-
-
+#Deploy ChaosMesh
+helm repo add chaos-mesh https://charts.chaos-mesh.org
+kubectl create ns chaos-testing
+helm install chaos-mesh chaos-mesh/chaos-mesh -n=chaos-testing --version 2.3.1 --set chaosDaemon.hostNetwork=true --set chaosDaemon.runtime=containerd --set controllerManager.enableFilterNamespace=true  --set dashboard.ingress.enabled=true --set dashboard.ingress.hosts[0].name="chaos.$IP.nip.io" --set dashboard.create=true --set dashboard.ingress.ingressClassName=nginx --set chaosDaemon.socketPath=/run/containerd/containerd.sock
+kubectl wait pod -l app.kubernetes.io/component=chaos-daemon -n chaos-testing --for=condition=Ready --timeout=2m
+kubectl apply -f chaos-mesh/rbac_viewer.yaml -n hipster-shop
+# Creating the manager TOken in case ....TODO to delete this line
+kubectl apply -f chaos-mesh/rbac_manager.yaml -n hipster-shop
+# Get the Token of the viewer profile
+VIEWER_SECRET_NAME=$(kubectl get secrets -n hipster-shop -o=jsonpath='{.items[?(@.metadata.annotations.kubernetes\.io/service-account\.name=="account-otel-demo-viewer")].metadata.name}')
+VIEWER_SECRET_TOKEN=$(kubectl get secrets $VIEWER_SECRET_NAME -n hipster-shop -o  jsonpath="{.data.token}")
+echo "Deploy Chaos Experiments"
+kubectl apply -f chaos-mesh/podcpu-stress.yaml
+kubectl apply -f chaos-mesh/podfailure.yaml
+kubectl apply -f chaos-mesh/podlantency.yaml
+kubectl apply -f chaos-mesh/podmemorystress.yaml
 # Echo environ*
 echo "========================================================"
 echo "Environment fully deployed "
 echo "Grafana url : http://grafana.$IP.nip.io"
 echo "Grafana User: $USER_GRAFANA"
 echo "Grafana Password: $PASSWORD_GRAFANA"
-echo "Kubecost url: kubecost.$IP.nip.io"
+echo "Kubecost url: http://kubecost.$IP.nip.io"
+echo "ChaosMesh url: http://chaos.$IP.nip.io"
 echo "Online Boutique url: http://demo.$IP.nip.io"
+echo "ChaosMesh sa name :account-otel-demo-viewer "
+echo "ChoasMesh namespace: hipster-shop"
+echo "ChasMesh viewer token : $VIEWER_SECRET_TOKEN "
 echo "========================================================"
 if [ $K3d_mode -eq 1 ]
 then
