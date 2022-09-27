@@ -6,7 +6,7 @@ spec:
   mode: daemonset
   hostNetwork: true
   serviceAccount: otelcontribcol
-  image: otel/opentelemetry-collector-contrib:0.46.0
+  image: otel/opentelemetry-collector-contrib:0.60.0
   config: |
     receivers:
       otlp:
@@ -15,6 +15,7 @@ spec:
           http:
       zipkin:
         endpoint: 0.0.0.0:9411
+
       otlp/spanmetrics:
         protocols:
           grpc:
@@ -57,11 +58,16 @@ spec:
       prometheus:
         endpoint: "0.0.0.0:9090"
         namespace: default
+
+      otlp/spanmetrics:
+          endpoint: "localhost:55677"
+          tls:
+            insecure: true
     service:
       pipelines:
         traces:
           receivers: [otlp,zipkin]
-          processors: [memory_limiter,k8sattributes,batch]
+          processors: [memory_limiter,k8sattributes,spanmetrics,batch]
           exporters: [otlp]
         metrics:
           receivers: [otlp]
@@ -69,4 +75,4 @@ spec:
           exporters: [prometheus]
         metrics/spanmetrics:
           receivers: [otlp/spanmetrics]
-          exporters: [prometheus]
+          exporters: [otlp/spanmetrics]
