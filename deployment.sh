@@ -151,7 +151,6 @@ helm upgrade --install tempo-distributed grafana/tempo --namespace tempo --set q
 kubectl wait pod -l app.kubernetes.io/instance=tempo -n tempo --for=condition=Ready --timeout=2m
 TEMPO_SERICE_NAME=$(kubectl  get svc -l app.kubernetes.io/instance=tempo -n tempo -o jsonpath="{.items[0].metadata.name}")
 sed -i "s,TEMPO_SERIVCE_NAME,$TEMPO_SERICE_NAME," kubernetes-manifests/openTelemetry-manifest.yaml
-sed -i "s,PROM_SERVICE_TOREPLACE,$PROMETHEUS_SERVER," kubernetes-manifests/openTelemetry-manifest.yaml
 CLUSTERID=$(kubectl get namespace kube-system -o jsonpath='{.metadata.uid}')
 sed -i "s,CLUSTER_ID_TOREPLACE,$CLUSTERID," kubernetes-manifests/openTelemetry-sidecar.yaml
 
