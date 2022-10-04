@@ -20,7 +20,7 @@ spec:
       terminationGracePeriodSeconds: 5
       containers:
         - name: emailservice
-          image: otel/demo:v0.3.4-alpha-emailservice
+          image: otel/demo:VERSION_TO_REPLACE-emailservice
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -97,7 +97,7 @@ spec:
     spec:
       containers:
         - name: checkoutservice
-          image: otel/demo:v0.3.4-alpha-checkoutservice
+          image: otel/demo:VERSION_TO_REPLACE-checkoutservice
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -185,7 +185,7 @@ spec:
       terminationGracePeriodSeconds: 5
       containers:
         - name: recommendationservice
-          image: otel/demo:v0.3.4-alpha-recommendationservice
+          image: otel/demo:VERSION_TO_REPLACE-recommendationservice
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -266,7 +266,7 @@ spec:
         - name: frontend
           # both look good
           #image: registry.lab.dynatrace.org/cloudplatform/hipster-shop-frontend
-          image: otel/demo:v0.3.4-alpha-frontend
+          image: otel/demo:VERSION_TO_REPLACE-frontend
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -295,6 +295,8 @@ spec:
               value: service.name=$(OTEL_SERVICE_NAME),k8s.namespace.name=$(OTEL_K8S_NAMESPACE),k8s.node.name=$(OTEL_K8S_NODE_NAME),k8s.pod.name=$(OTEL_K8S_POD_NAME)
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: "http://localhost:4317"
+            - name: OTLP_CLIENT_EXPORTER_ENDPOINT
+              value: "http://collector.34.159.144.147.nip.io"
             - name: FRONTEND_ADDR
               value: :8080
             - name: PRODUCT_CATALOG_SERVICE_ADDR
@@ -333,11 +335,15 @@ spec:
     - name: http
       port: 80
       targetPort: 8080
+    - name: otlphttp
+      port: 4318
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: onlineboutique-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
   ingressClassName: nginx
   rules:
@@ -351,7 +357,6 @@ spec:
                 name: frontend
                 port:
                   number: 80
----
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -375,7 +380,7 @@ spec:
       terminationGracePeriodSeconds: 5
       containers:
         - name: paymentservice
-          image: otel/demo:v0.3.4-alpha-paymentservice
+          image: otel/demo:VERSION_TO_REPLACE-paymentservice
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -452,7 +457,7 @@ spec:
       containers:
         - name: productcatalogservice
           # image: registry.lab.dynatrace.org/cloudplatform/hipster-shop-productcatalogservice
-          image: otel/demo:v0.3.4-alpha-productcatalogservice
+          image: otel/demo:VERSION_TO_REPLACE-productcatalogservice
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -530,7 +535,7 @@ spec:
       terminationGracePeriodSeconds: 5
       containers:
         - name: cartservice
-          image: otel/demo:v0.3.4-alpha-cartservice
+          image: otel/demo:VERSION_TO_REPLACE-cartservice
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -611,7 +616,7 @@ spec:
       terminationGracePeriodSeconds: 5
       containers:
         - name: loadgeneratorservice
-          image: otel/demo:v0.3.4-alpha-loadgenerator
+          image: otel/demo:VERSION_TO_REPLACE-loadgenerator
           imagePullPolicy: Always
           ports:
             - name: locust
@@ -678,6 +683,24 @@ spec:
       port: 8089
       targetPort: 8089
 ---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: locust-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host :  "locust.IP_TO_REPLACE.nip.io"
+      http:
+        paths:
+          - pathType: ImplementationSpecific
+            path: "/"
+            backend:
+              service:
+                name: loadgeneratorservice
+                port:
+                  number: 8089
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -700,7 +723,7 @@ spec:
       terminationGracePeriodSeconds: 5
       containers:
         - name: currencyservice
-          image: otel/demo:v0.3.4-alpha-currencyservice
+          image: otel/demo:VERSION_TO_REPLACE-currencyservice
           imagePullPolicy: Always
           ports:
             - name: grpc
@@ -776,7 +799,7 @@ spec:
     spec:
       containers:
         - name: shippingservice
-          image: otel/demo:v0.3.4-alpha-shippingservice
+          image: otel/demo:VERSION_TO_REPLACE-shippingservice
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -807,6 +830,8 @@ spec:
               value: service.name=$(OTEL_SERVICE_NAME),k8s.namespace.name=$(OTEL_K8S_NAMESPACE),k8s.node.name=$(OTEL_K8S_NODE_NAME),k8s.pod.name=$(OTEL_K8S_POD_NAME)
             - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
               value: "http://localhost:4317"
+            - name: QUOTE_SERVICE_ADDR
+              value: "http://quoteservice:8080"
           resources:
             requests:
               cpu: 100m
@@ -942,7 +967,7 @@ spec:
       terminationGracePeriodSeconds: 5
       containers:
         - name: adservice
-          image: otel/demo:v0.3.4-alpha-adservice
+          image: otel/demo:VERSION_TO_REPLACE-adservice
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -1019,7 +1044,7 @@ spec:
       terminationGracePeriodSeconds: 5
       containers:
         - name: featureflagservice
-          image: otel/demo:v0.3.4-alpha-featureflagservice
+          image: otel/demo:VERSION_TO_REPLACE-featureflagservice
           imagePullPolicy: Always
           ports:
             - name: grpc
@@ -1084,6 +1109,24 @@ spec:
       port: 8081
       targetPort: 8081
 ---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: featureflag-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host :  "featureflag.IP_TO_REPLACE.nip.io"
+      http:
+        paths:
+          - pathType: ImplementationSpecific
+            path: "/"
+            backend:
+              service:
+                name: featureflagservice
+                port:
+                  number: 8081
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -1147,7 +1190,6 @@ spec:
             limits:
               cpu: 300m
               memory: 300Mi
-
 ---
 apiVersion: v1
 kind: Service
@@ -1163,4 +1205,87 @@ spec:
     - name: postgres
       port: 5432
       targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quoteservice
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otel-demo
+      app.kubernetes.io/instance: otel-demo-quoteservice
+      app.kubernetes.io/component: quoteservice
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: otel-demo
+        app.kubernetes.io/instance: otel-demo-quoteservice
+        app.kubernetes.io/component: quoteservice
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: quoteservice
+          image: otel/demo:VERSION_TO_REPLACE-quoteservice
+          imagePullPolicy: Always
+          ports:
+            - name: quote
+              containerPort: 8080
+          env:
+            - name: QUOTE_SERVICE_PORT
+              value: "8080"
+            - name: OTEL_SERVICE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: 'metadata.labels[''app.kubernetes.io/component'']'
+            - name: OTEL_K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: OTEL_K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: OTEL_K8S_POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.name=$(OTEL_SERVICE_NAME),k8s.namespace.name=$(OTEL_K8S_NAMESPACE),k8s.node.name=$(OTEL_K8S_NODE_NAME),k8s.pod.name=$(OTEL_K8S_POD_NAME)
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://localhost:4317"
+            - name: OTEL_TRACES_SAMPLER
+              value: parentbased_always_on
+            - name: OTEL_TRACES_EXPORTER
+              value: otlp
+            - name: OTEL_EXPORTER_OTLP_TRACES_PROTOCOL
+              value: grpc
+            - name: OTEL_PHP_TRACES_PROCESSOR
+              value: simple
+          resources:
+            requests:
+              cpu: 200m
+              memory: 180Mi
+            limits:
+              cpu: 300m
+              memory: 300Mi
+----
+apiVersion: v1
+kind: Service
+metadata:
+  name: quoteservice
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: otel-demo
+    app.kubernetes.io/instance: otel-demo-quoteservice
+    app.kubernetes.io/component: quoteservice
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
 ---

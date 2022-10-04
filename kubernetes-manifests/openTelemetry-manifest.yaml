@@ -7,6 +7,10 @@ spec:
   hostNetwork: true
   serviceAccount: otelcontribcol
   image: otel/opentelemetry-collector-contrib:0.60.0
+  ports:
+    - name: prometheus
+      port: 9090
+      targetPort: 9090
   config: |
     receivers:
       otlp:

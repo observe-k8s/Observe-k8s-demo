@@ -30,11 +30,16 @@ fi
 ###########################################################################################################
 ####  Required Environment variable :
 #### GITCLONE: if parameter is not passed with a value then the script will clone the repo
+#### oteldemo_version : default value v0.4.0-alpha. But can deploy newer version of the otel-demo application
 #########################################################################################################
 while [ $# -gt 0 ]; do
   case "$1" in
   --gitclone)
     GITCLONE="$2"
+    shift 2
+    ;;
+   --oteldemo_version)
+    VERSION="$2"
     shift 2
     ;;
   *)
@@ -48,6 +53,10 @@ if [ -z "$GITCLONE" ]; then
   GITCLONE=1
 fi
 
+if [ -z "$VERSION" ]; then
+  VERSION=v0.4.0-alpha
+  echo "Deploying the Otel demo version $VERSION"
+fi
 #if ! command -v eksctl >/dev/null 2>&1; then
 #    echo "Please install eksctl before continuing"
 #    exit 1
@@ -99,6 +108,9 @@ echo 'Found external IP: '$IP
 sed -i "s,IP_TO_REPLACE,$IP," kubernetes-manifests/K8sdemo.yaml
 sed -i "s,IP_TO_REPLACE,$IP," grafana/ingress.yaml
 
+##Updating deployment files
+sed -i "s,VERSION_TO_REPLACE,$VERSION," kubernetes-manifests/K8sdemo.yaml
+sed -i "s,VERSION_TO_REPLACE,$VERSION," kubernetes-manifests/K8sdemo_noagent.yaml
 
 ### Depploy Prometheus
 echo "start depploying Prometheus"
@@ -192,8 +204,9 @@ kubectl apply -f  grafana/prometheus-datasource.yaml
 
 #Deploy the OpenTelemetry Collector
 echo "Deploying Otel Collector"
-kubectl apply -f kubernetes-manifests/openTelemetry-manifest.yaml
 kubectl apply -f kubernetes-manifests/rbac.yaml
+kubectl apply -f kubernetes-manifests/openTelemetry-manifest.yaml
+kubectl apply -f prometheus/ServiceMonitor.yaml
 
 #Deploy demo Application
 echo "Deploying Hipstershop"
@@ -219,18 +232,23 @@ kubectl apply -f chaos-mesh/podfailure.yaml
 kubectl apply -f chaos-mesh/podlantency.yaml
 kubectl apply -f chaos-mesh/podmemorystress.yaml
 # Echo environ*
-echo "========================================================"
+echo "==============Grafana============================="
 echo "Environment fully deployed "
 echo "Grafana url : http://grafana.$IP.nip.io"
 echo "Grafana User: $USER_GRAFANA"
 echo "Grafana Password: $PASSWORD_GRAFANA"
-echo "Kubecost url: http://kubecost.$IP.nip.io"
+echo "--------------Demo--------------------"
+echo "url of the demo: "
+echo "Otel demo url: http://demo.$IP.nip.io"
+echo "Locust: http://locust.$IP.nip.io"
+echo "FeatureFlag : http://featureflag.$IP.nip.io"
+echo "-------------ChasMesh---------------------"
 echo "ChaosMesh url: http://chaos.$IP.nip.io"
-echo "Online Boutique url: http://demo.$IP.nip.io"
 echo "ChaosMesh sa name :account-otel-demo-viewer "
-echo "ChoasMesh namespace: hipster-shop"
+echo "ChoasMesh namespace: otel-demo"
 echo "ChasMesh viewer token : $VIEWER_SECRET_TOKEN "
 echo "========================================================"
+
 if [ $K3d_mode -eq 1 ]
 then
   kubectl wait pod  -l app.kubernetes.io/name=grafana --for=condition=Ready --timeout=2m

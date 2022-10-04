@@ -1,21 +1,7 @@
 # Kubernestes Observability Demo
 
 This repository will explain how to deploy the various CNCF project to observe properly your Kubernetes cluster .
-This repository is based on the popular Demo platform provided by Google : The Online Boutique
-<p align="center">
-<img src="src/frontend/static/icons/Hipster_HeroLogoCyan.svg" width="300" alt="Online Boutique" />
-</p>
 
-**Online Boutique** is a cloud-native microservices demo application.
-Online Boutique consists of a 10-tier microservices application. The application is a
-web-based e-commerce app where users can browse items,
-add them to the cart, and purchase them.
-The Google HipsterShop is a microservice architecture using several langages :
-* Go 
-* Python
-* Nodejs
-* C#
-* Java
 
 # Documentation
 
