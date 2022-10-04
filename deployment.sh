@@ -110,7 +110,7 @@ sed -i "s,IP_TO_REPLACE,$IP," grafana/ingress.yaml
 
 ##Updating deployment files
 sed -i "s,VERSION_TO_REPLACE,$VERSION," kubernetes-manifests/K8sdemo.yaml
-sed -i "s,VERSION_TO_REPLACE,$VERSION," kubernetes-manifests/K8sdemo_noagent.yaml
+
 
 ### Depploy Prometheus
 echo "start depploying Prometheus"
