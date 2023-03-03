@@ -1,14 +1,14 @@
 kind: ServiceAccount
 apiVersion: v1
 metadata:
-  namespace: hipster-shop
+  namespace: otel-demo
   name: account-otel-demo-manager
 
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  namespace: hipster-shop
+  namespace: otel-demo
   name: role-otel-demo-manager
 rules:
   - apiGroups: [""]
@@ -24,11 +24,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: bind-otel-demo-manager
-  namespace: hipster-shop
+  namespace: otel-demo
 subjects:
   - kind: ServiceAccount
     name: account-otel-demo-manager
-    namespace: hipster-shop
+    namespace: otel-demo
 roleRef:
   kind: ClusterRole
   name: role-otel-demo-manager

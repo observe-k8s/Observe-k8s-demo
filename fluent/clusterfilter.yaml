@@ -44,3 +44,8 @@ spec:
     - modify:
         rules:
           - remove: kubernetes
+    - throttle:
+        rate: 800
+        window: 3
+        interval: 10s
+        printStatus: true

@@ -1,7 +1,7 @@
 kind: Schedule
 apiVersion: chaos-mesh.org/v1alpha1
 metadata:
-  namespace: hipster-shop
+  namespace: otel-demo
   name: podcpu-stress
 spec:
   schedule: 5 * * * *
@@ -12,7 +12,7 @@ spec:
   stressChaos:
     selector:
       namespaces:
-        - hipster-shop
+        - otel-demo
       labelSelectors:
         app.kubernetes.io/name: otel-demo
     mode: random-max-percent

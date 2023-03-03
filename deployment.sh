@@ -54,8 +54,8 @@ if [ -z "$GITCLONE" ]; then
 fi
 
 if [ -z "$VERSION" ]; then
-  VERSION=v0.4.0-alpha
-  echo "Deploying the Otel demo version $VERSION"
+  VERSION=v1.2.1
+    echo "Deploying the Otel demo version $VERSION"
 fi
 #if ! command -v eksctl >/dev/null 2>&1; then
 #    echo "Please install eksctl before continuing"
@@ -68,13 +68,8 @@ fi
 
 ################################################################################
 ### Clone repo
-if [ $GITCLONE -eq 1];
-then
-  git clone https://github.com/observe-k8s/Observe-k8s-demo
-  cd Observe-k8s-demo
-  K3d_mode=0
-  #TODO add the provisionning of the cluster here
-
+if [ "$GITCLONE" -eq 1 ]; then
+  echo "local deployment"
 else
   echo "-- Bringing up a k3d cluster --"
   k3d cluster create observeK8s --config=/root/k3dconfig.yaml --wait
@@ -137,7 +132,7 @@ helm repo update
 
 #### Deploy the cert-manager
 echo "Deploying Cert Manager ( for OpenTelemetry Operator)"
-kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.6.1/cert-manager.yaml
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.10.0/cert-manager.yaml
 # Wait for pod webhook started
 kubectl wait pod -l app.kubernetes.io/component=webhook -n cert-manager --for=condition=Ready --timeout=2m
 # Deploy the opentelemetry operator
@@ -149,32 +144,31 @@ echo "Deploying Tempo"
 kubectl create ns tempo
 helm upgrade --install tempo-distributed grafana/tempo --namespace tempo --set queryFrontend.query.enabled=true --set prometheusRule.enabled=true --set metricsGenerator.enabled=true --set memcached.enabled=true
 kubectl wait pod -l app.kubernetes.io/instance=tempo -n tempo --for=condition=Ready --timeout=2m
-TEMPO_SERICE_NAME=$(kubectl  get svc -l app.kubernetes.io/instance=tempo -n tempo -o jsonpath="{.items[0].metadata.name}")
+TEMPO_SERICE_NAME=$(kubectl  get svc -l  app.kubernetes.io/name=tempo -n tempo -o jsonpath="{.items[0].metadata.name}")
 sed -i "s,TEMPO_TO_REPLACE,$TEMPO_SERICE_NAME," kubernetes-manifests/openTelemetry-manifest.yaml
 CLUSTERID=$(kubectl get namespace kube-system -o jsonpath='{.metadata.uid}')
 sed -i "s,CLUSTER_ID_TOREPLACE,$CLUSTERID," kubernetes-manifests/openTelemetry-sidecar.yaml
-
+sed -i "s,CLUSTER_ID_TOREPLACE,$CLUSTERID," fluent/clusterfilter.yaml
 #Deploying the fluent operator
 echo "Deploying FluentOperator"
-helm install fluent-operator --create-namespace -n kubesphere-logging-system https://github.com/fluent/fluent-operator/releases/download/v1.0.0/fluent-operator.tgz
+helm install fluent-operator --create-namespace -n kubesphere-logging-system https://github.com/fluent/fluent-operator/releases/download/v2.0.1/fluent-operator.tgz
 
 # Deploying Loki
 echo "Deploying Loki"
 kubectl create ns loki
-helm upgrade --install loki grafana/loki --namespace loki
+helm upgrade --install loki grafana/loki --namespace loki --set loki.auth_enabled=false  --set minio.enabled=true
 kubectl wait pod -n loki -l  app=loki --for=condition=Ready --timeout=2m
-LOKI_SERVICE=$(kubectl  get svc -l app=loki  -n loki -o jsonpath="{.items[0].metadata.name}")
+LOKI_SERVICE=$(kubectl  get svc -l app.kubernetes.io/component=gateway  -n loki -o jsonpath="{.items[0].metadata.name}")
 sed -i "s,LOKI_SERVICE_TOREPLACE,$LOKI_SERVICE," fluent/ClusterOutput_loki.yaml
 
 
 # Deploy the fluent agents
-kubectl apply -f fluentbit_deployment.yaml  -n kubesphere-logging-system
+kubectl apply -f fluent/fluentbit_deployment.yaml  -n kubesphere-logging-system
 kubectl apply -f fluent/ClusterOutput_loki.yaml  -n kubesphere-logging-system
-
+kubectl apply -f fluent/clusterfilter.yaml  -n kubesphere-logging-system
 # Deploy the Kubecost
 kubectl apply -f grafana/ingress.yaml
-if [ $K3d_mode -eq 1 ]
-then
+if [ "$K3d_mode" -eq 1 ]; then
   PASSWORD_GRAFANA=$(kubectl get secret --namespace default prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 -d)
   USER_GRAFANA=$(kubectl get secret --namespace default prometheus-grafana -o jsonpath="{.data.admin-user}" | base64 -d)
 else
@@ -208,20 +202,20 @@ kubectl apply -f kubernetes-manifests/openTelemetry-manifest.yaml
 kubectl apply -f prometheus/ServiceMonitor.yaml
 
 #Deploy demo Application
-echo "Deploying Hipstershop"
-kubectl create ns hipster-shop
-kubectl annotate ns hipster-shop chaos-mesh.org/inject=enabled
-kubectl apply -f kubernetes-manifests/openTelemetry-sidecar.yaml -n hipster-shop
-kubectl apply -f kubernetes-manifests/k8sdemo.yaml -n hipster-shop
+echo "Deploying Otel-demo"
+kubectl create ns otel-demo
+kubectl annotate ns otel-demo chaos-mesh.org/inject=enabled
+kubectl apply -f kubernetes-manifests/openTelemetry-sidecar.yaml -n otel-demo
+kubectl apply -f kubernetes-manifests/k8sdemo.yaml -n otel-demo
 
 #Deploy ChaosMesh
 helm repo add chaos-mesh https://charts.chaos-mesh.org
 kubectl create ns chaos-testing
 helm install chaos-mesh chaos-mesh/chaos-mesh -n=chaos-testing --version 2.3.1 --set chaosDaemon.hostNetwork=true --set chaosDaemon.runtime=containerd --set controllerManager.enableFilterNamespace=true  --set dashboard.ingress.enabled=true --set dashboard.ingress.hosts[0].name="chaos.$IP.nip.io" --set dashboard.create=true --set dashboard.ingress.ingressClassName=nginx --set chaosDaemon.socketPath=/run/containerd/containerd.sock
 kubectl wait pod -l app.kubernetes.io/component=chaos-daemon -n chaos-testing --for=condition=Ready --timeout=2m
-kubectl apply -f chaos-mesh/rbac_viewer.yaml -n hipster-shop
+kubectl apply -f chaos-mesh/rbac_viewer.yaml -n otel-demo
 # Creating the manager TOken in case ....TODO to delete this line
-kubectl apply -f chaos-mesh/rbac_manager.yaml -n hipster-shop
+kubectl apply -f chaos-mesh/rbac_manager.yaml -n otel-demo
 # Get the Token of the viewer profile
 VIEWER_SECRET_NAME=$(kubectl get secrets -n hipster-shop -o=jsonpath='{.items[?(@.metadata.annotations.kubernetes\.io/service-account\.name=="account-otel-demo-viewer")].metadata.name}')
 VIEWER_SECRET_TOKEN=$(kubectl get secrets $VIEWER_SECRET_NAME -n hipster-shop -o  jsonpath="{.data.token}")

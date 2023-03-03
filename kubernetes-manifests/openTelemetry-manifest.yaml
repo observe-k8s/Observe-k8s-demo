@@ -6,7 +6,7 @@ spec:
   mode: daemonset
   hostNetwork: true
   serviceAccount: otelcontribcol
-  image: otel/opentelemetry-collector-contrib:0.60.0
+  image: otel/opentelemetry-collector-contrib:0.72.0
   ports:
     - name: prometheus
       port: 9090
@@ -24,11 +24,25 @@ spec:
         protocols:
           grpc:
             endpoint: "localhost:65535"
+
+      otlp/servicegraph: # Dummy receiver for the metrics pipeline
+         protocols:
+           grpc:
+             endpoint: localhost:12345
+
     processors:
       batch:
         send_batch_max_size: 1000
         timeout: 30s
         send_batch_size : 800
+
+      servicegraph:
+        metrics_exporter: prometheus # Exporter to send metrics to
+        latency_histogram_buckets: [100us, 1ms, 2ms, 6ms, 10ms, 100ms, 250ms] # Buckets for latency histogram
+        dimensions: [cluster, namespace] # Additional dimensions (labels) to be added to the metrics extracted from the resource and span attributes
+        store: # Configuration for the in-memory store
+          ttl: 2s # Value to wait for an edge to be completed
+          max_items: 200 # Amount of edges that will be stored in the storeMap
 
       spanmetrics:
         metrics_exporter: prometheus
@@ -71,7 +85,7 @@ spec:
       pipelines:
         traces:
           receivers: [otlp,zipkin]
-          processors: [memory_limiter,k8sattributes,spanmetrics,batch]
+          processors: [memory_limiter,k8sattributes,spanmetrics,servicegraph,batch]
           exporters: [otlp]
         metrics:
           receivers: [otlp]
@@ -80,3 +94,7 @@ spec:
         metrics/spanmetrics:
           receivers: [otlp/spanmetrics]
           exporters: [otlp/spanmetrics]
+        metrics/servicegraph:
+          receivers: [otlp/servicegraph]
+          processors: []
+          exporters: [prometheus]

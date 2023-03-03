@@ -1,14 +1,14 @@
 kind: ServiceAccount
 apiVersion: v1
 metadata:
-  namespace: hipster-shop
+  namespace: otel-demo
   name: account-otel-demo-viewer
 
 ---
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  namespace: hipster-shop
+  namespace: otel-demo
   name: role-otel-demo-viewer
 rules:
   - apiGroups: [""]
@@ -24,7 +24,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: bind-otel-demo-viewer
-  namespace: hipster-shop
+  namespace: otel-demo
 subjects:
   - kind: ServiceAccount
     name: account-otel-demo-viewer

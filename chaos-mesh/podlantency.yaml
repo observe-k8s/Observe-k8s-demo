@@ -1,7 +1,7 @@
 kind: Schedule
 apiVersion: chaos-mesh.org/v1alpha1
 metadata:
-  namespace: hipster-shop
+  namespace: otel-demo
   name: podlantency
 spec:
   schedule: 10 * * * *
@@ -12,7 +12,7 @@ spec:
   networkChaos:
     selector:
       namespaces:
-        - hipster-shop
+        - otel-demo
       labelSelectors:
         app.kubernetes.io/name: otel-demo
     mode: all

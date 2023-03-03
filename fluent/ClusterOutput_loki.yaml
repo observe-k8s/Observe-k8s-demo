@@ -9,5 +9,5 @@ spec:
   match: kube.*
   loki:
     autoKubernetesLabels: "on"
-    host: LOKI_TO_REPLACE.loki.svc
-    port: 3100
+    host: LOKI_SERVICE_TOREPLACE.loki.svc.cluster.local
+    port: 80
